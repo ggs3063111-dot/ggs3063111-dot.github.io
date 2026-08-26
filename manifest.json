@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-26T17:25:33+08:00",
+  "sourceSha256": "3b6bc542d765e08e357d506d59d328ec0d0ed9629b44f246586498a88e9a9933",
+  "dataStartDate": "2021-01-04",
+  "dataEndDate": "2026-08-25",
+  "tradingDays": 1407,
+  "counts": {
+    "institutions": 8,
+    "combos": 44,
+    "cells": 640
+  },
+  "source": {
+    "name": "现券二级成交分机构统计 · 同业存单(NCD)二级净买卖",
+    "note": "机构口径：大型银行 = 大型商业银行/政策性银行 + 股份制商业银行（2025年及以前）／大型银行（2026年起央行新口径）；中小型银行 = 城商行 + 农商行 + 外资行（2025年及以前）／中小型银行（2026年起）。统计口径：二级现券净买入，不含一级中标与分销；存单单位由百万元折算为亿元。阈值口径：逐日滚动 120 个交易日分位，仅使用当日之前的样本（point-in-time，无前视）。"
+  },
+  "webSince": "2026-01-01",
+  "pages": [
+    {
+      "file": "信号扫描_web.html",
+      "bytes": 7993971,
+      "sha256": "b24c400eef568b697c2405de49f155fa0d82d3aeb50c8b189b385e81d3742c73"
+    },
+    {
+      "file": "信号工作台.html",
+      "bytes": 8505823,
+      "sha256": "de4bdc54b814fe2717880d8992799c0979b12dcdde5dec70cf4f54112df6530a"
+    }
+  ],
+  "validation": {
+    "passed": 49,
+    "warnings": 0,
+    "errors": 0
+  }
+}
