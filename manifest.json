@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-10T09:00:03+08:00",
-  "sourceSha256": "bb5d74d270b0cc9233763b396585539ae97f0f8a66c6d238132fed25e2b80a0f",
+  "generatedAt": "2026-09-11T09:20:16+08:00",
+  "sourceSha256": "ae3374cef450f2e366f766860ed1ece245b9f1c30efd281cddfae1380542c3ed",
   "dataStartDate": "2021-01-04",
-  "dataEndDate": "2026-09-09",
-  "tradingDays": 1418,
+  "dataEndDate": "2026-09-10",
+  "tradingDays": 1419,
   "counts": {
     "institutions": 8,
     "combos": 44,
@@ -18,13 +18,13 @@
   "pages": [
     {
       "file": "信号扫描_web.html",
-      "bytes": 8107686,
-      "sha256": "5aff2354fddb7c7ea8e557a2a404b567dcf970c12b2f872599d076ef1a96ce73"
+      "bytes": 8117745,
+      "sha256": "9043b2bdfdeb18e94704efdeec26f48bcd8063022b4652b7efa39577b6e43ccb"
     },
     {
       "file": "信号工作台.html",
-      "bytes": 8502797,
-      "sha256": "cefba9bac32e6fb53dc326e089b160eedeb82035026f2b6ea9dc758ac629ac0d"
+      "bytes": 8503616,
+      "sha256": "3cbedf4990f9203685315da1f6bb0d5b77e9f441edee46914a89201048bfa7a2"
     }
   ],
   "validation": {
