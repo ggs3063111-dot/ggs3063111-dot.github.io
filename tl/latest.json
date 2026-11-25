@@ -1,0 +1,25 @@
+{
+  "date": "2026-11-25",
+  "daily_score": -10.9158753239,
+  "daily_roll_trial": 0.5013335381,
+  "minute_score": -19.894873742,
+  "minute_roll_trial": -25.4380082496,
+  "missing": [
+    "CTD基差/净基差/IRR"
+  ],
+  "report_url": "https://www.fixcmulti.top/tl/20261125/",
+  "files": {
+    "brief.txt": "462ac1ff778635ad777c663d937a0264dd62d2abf44690ad58b70c55494d90fe",
+    "daily-outlook.png": "279f5fe956d384d1542d80f393c6d77f2ae2db5190446ecdc6e7037688cf753e",
+    "daily-signals.png": "9eda64de18da83cfbf1a60e6522afc0c5f676df8b17e51797c561a9d42516b42",
+    "data-status.txt": "386f3b42190a31f015a8df2233238a3f23357b46e147b43e436f90a860dd91cf",
+    "flow.txt": "a7dc3518c2fdfb55ea84963dd4b5c15e2a67caf2136207460a433740435ca96a",
+    "index.html": "b05e375f0931349605b832d51594eca058eea674300b63958c08f851f1bb7527",
+    "intraday.html": "2e350566419c5793194ab60b077b0f93c8ff7ccd70f520333cbe9250c44182ab",
+    "overview.png": "4dcc431286754d808779a11024109c73ed6552f7fdc158da8ff581226dcebef7",
+    "panorama.html": "5a1ef9283c0b2c222778eb7adb2783ad141a733cef69e85d70f9f3fa725b604f",
+    "review.txt": "91fe8be711b0b21f170cf2b0191718f23c4d0d04935805e2b7f7a399d40e1583",
+    "rollover.txt": "d8ae179726f2f28b000858bb4b37bf227f665e1442f45a57aea24f4ca1e3e193",
+    "seats.txt": "b5e110c5b9ae34f3c953b91a31acdcd2a0381d4d3ea66dd1268006b0e5527f98"
+  }
+}
