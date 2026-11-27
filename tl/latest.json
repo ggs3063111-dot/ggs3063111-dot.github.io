@@ -1,27 +1,27 @@
 {
-  "date": "2026-11-25",
-  "daily_score": -10.9158753239,
-  "daily_roll_trial": 0.5013335381,
-  "minute_score": -19.894873742,
-  "minute_roll_trial": -25.4380082496,
+  "date": "2026-11-26",
+  "daily_score": -25.0764498853,
+  "daily_roll_trial": -13.4902952084,
+  "minute_score": -28.3908073401,
+  "minute_roll_trial": -21.6330374294,
   "missing": [
     "CTD基差/净基差/IRR"
   ],
-  "report_url": "https://www.fixcmulti.top/tl/20261125/",
+  "report_url": "https://www.fixcmulti.top/tl/20261126/",
   "files": {
-    "brief.txt": "243521b13aed785e264ed485b779312259be8532383bb61bb65b0507b82bdca7",
-    "daily-outlook.png": "279f5fe956d384d1542d80f393c6d77f2ae2db5190446ecdc6e7037688cf753e",
-    "daily-signals.png": "9eda64de18da83cfbf1a60e6522afc0c5f676df8b17e51797c561a9d42516b42",
-    "data-status.txt": "16e03c5444af2a18f67a289560984d0acbe55660bf3b8a308e6c943d801087e9",
-    "flow-five-days.json": "0a9740ce243834cc1b3410ebfd8f2a29b9652be53dc846580e67eba2e39aa39e",
-    "flow.txt": "17bf01ddd4823ed269d0ab24151c969d1b5fe71e27db081897f9ca648d43daed",
-    "index.html": "aa8b6aa10d00c10c4fe0ab2c6fd0aa77d2d8c1cb02a56c7ce45b5e2f3127d38e",
-    "intraday.html": "ff2927d5f7617016e96576618fcfe14fac552ec5cc00f607c64c11e1d6494bfb",
-    "overview.png": "4dcc431286754d808779a11024109c73ed6552f7fdc158da8ff581226dcebef7",
-    "panorama.html": "2a003b078bfa5020a67d09f91d362a0a0d9f65672a81ee0116a03c53d297b6b8",
-    "review.html": "27bd0c39bdf96b265630e020e3781cd3d79d0e5769dd7ad1deac6386a73038c4",
-    "review.txt": "69afd49fda88c031417d6c1b67a61258a414817b9564c4139de97b9741084757",
-    "rollover.txt": "8fd11c607f42f8d2672b208988947435b475796f8b68500483cdb3c84af64374",
-    "seats.txt": "c8c4218a66cf890aef09265a0e499b0ed2d33f0118d6dc1b314468945ee191de"
+    "brief.txt": "c610c0755f84295c80ba2b0440de44fc605c435fb6fa6375fb66d84169394280",
+    "daily-outlook.png": "d8e9292a2b128194b8e86695a7e0cd525ba235ebdc3a6e63d312db67c4425561",
+    "daily-signals.png": "fa4b6f7a58b0fd36c69f4f74a200f4eb64e37d0ebc96c7e8317396c2cc1a4b86",
+    "data-status.txt": "c4cadd0884ab40cbf4047c20507df98479a8b2f0ea39ac6b3187e611aedb6453",
+    "flow-five-days.json": "d4a60b23ac40e73fa048a4fb12cc7d3b0e17697a86e036793a92cbdeb6f0c388",
+    "flow.txt": "4a52eca7e646e1df75f435b8dda9314386d4c470d008ddc955371792009f737e",
+    "index.html": "d0b9caf6ab22d7635e5b70f68b38a89fe92e184c17c0ce6e23c753dca4fc48e7",
+    "intraday.html": "46091c36acd32989d873a91d3931245822e71f94374f8ba497279a5518241277",
+    "overview.png": "208f44bd11b7b1335553406c170654bc8f35c9c5a903198f0a37acb8500a74a9",
+    "panorama.html": "a5a4f64c735b8cf244d522254a4a35bd18c2fd1ca86b04fd1d8201535b346060",
+    "review.html": "bf1e1e0c0d6046cbb2d1bf6df916f0f433947811bd9355e59637f49f5101913d",
+    "review.txt": "422af981cecc55ec1111f169edb86d51e2892a7610594911927afc37642f9c8a",
+    "rollover.txt": "a48d0648362d0f448c016c0ec08bd18824f0c14b6765cae3ca68a0e75d9c070f",
+    "seats.txt": "34c0542ad522fdad9a605bb201ca33843b2e1b7edde90a3e5f1f48a657347710"
   }
 }

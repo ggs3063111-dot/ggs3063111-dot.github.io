@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>【中泰固收】TL 量化择时 · 2026-11-26</title>
+<style>
+:root {
+  --brand: #B91C1C; --brand-dark: #7F1D1D; --brand-light: #FEE2E2;
+  --brand-bg: #FEF2F2; --accent: #DC2626;
+  --neutral-900: #111827; --neutral-700: #374151; --neutral-500: #6B7280;
+  --neutral-300: #D1D5DB; --neutral-200: #E5E7EB; --neutral-100: #F3F4F6;
+  --neutral-50: #F9FAFB; --green: #047857; --green-light: #D1FAE5; --bg: #FAFAF9;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Microsoft YaHei', 'PingFang SC', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--neutral-900); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+.container { max-width: 1280px; margin: 0 auto; padding: 32px 24px; position: relative; }
+.header { border-bottom: 3px solid var(--brand); padding-bottom: 20px; margin-bottom: 32px; }
+.header h1 { font-size: 28px; font-weight: 700; color: var(--brand-dark); margin-bottom: 8px; }
+.header .meta { color: var(--neutral-500); font-size: 14px; display: flex; gap: 24px; flex-wrap: wrap; }
+.header .meta span { display: inline-flex; align-items: center; gap: 6px; }
+.header .meta strong { color: var(--neutral-700); font-weight: 600; }
+.hero { background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 100%); border-radius: 14px; padding: 28px 32px; color: white; margin-bottom: 32px; box-shadow: 0 4px 16px rgba(185, 28, 28, 0.15); }
+.hero-grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 24px; align-items: center; }
+.hero-item .label { font-size: 12px; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.hero-item .value { font-size: 26px; font-weight: 700; line-height: 1.2; }
+.hero-item .sub { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+.hero-item.advice .value { font-size: 22px; }
+.hero-item .badge { display: inline-block; background: rgba(255, 255, 255, 0.18); padding: 3px 10px; border-radius: 999px; font-size: 11px; margin-top: 6px; }
+/* DUAL_TF_MARK: hero 内「日线 / 60分钟」双周期对照条 */
+.hero-dual { margin-top: 22px; padding-top: 16px; border-top: 1px solid rgba(255, 255, 255, 0.22); }
+.dual-grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 10px 24px; align-items: center; }
+.dual-grid .dh { font-size: 12px; opacity: 0.62; letter-spacing: 0.5px; }
+.dual-grid .rk { font-size: 13px; font-weight: 600; opacity: 0.78; }
+.dual-grid .dv { font-size: 20px; font-weight: 700; line-height: 1.25; }
+.dual-grid .dv small { font-size: 13px; font-weight: 400; opacity: 0.7; }
+.dual-grid .dv.hit { color: #FFE08A; }
+.dual-grid .dv.flat { opacity: 0.62; font-weight: 600; }
+.dual-grid .dv.state { font-size: 16px; }
+.section { background: white; border-radius: 12px; padding: 24px 28px; margin-bottom: 24px; border: 1px solid var(--neutral-200); }
+.section h2 { font-size: 18px; font-weight: 600; color: var(--brand-dark); margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--neutral-200); display: flex; align-items: center; gap: 10px; }
+.section h2::before { content: ''; width: 3px; height: 18px; background: var(--brand); border-radius: 2px; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+@media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } .hero-grid { grid-template-columns: 1fr 1fr; } }
+.winrate-row { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
+.winrate-row .label { width: 130px; flex-shrink: 0; font-size: 13px; color: var(--neutral-700); }
+.winrate-row .bar-wrap { flex: 1; background: var(--neutral-100); height: 22px; border-radius: 4px; overflow: hidden; position: relative; }
+.winrate-row .bar { height: 100%; transition: width 0.6s ease-out; border-radius: 4px; }
+.winrate-row .bar.momentum { background: linear-gradient(90deg, var(--brand) 0%, var(--accent) 100%); }
+.winrate-row .bar.reversion { background: linear-gradient(90deg, #9CA3AF 0%, #6B7280 100%); }
+.winrate-row .pct { width: 50px; text-align: right; font-size: 13px; font-weight: 600; color: var(--neutral-700); }
+.state-tag { display: inline-flex; align-items: center; gap: 8px; background: var(--brand-bg); border: 1px solid var(--brand-light); padding: 8px 14px; border-radius: 8px; color: var(--brand-dark); font-weight: 600; margin-top: 12px; }
+.state-summary { font-size: 13px; color: var(--neutral-500); margin-top: 10px; line-height: 1.7; }
+.price-ladder { position: relative; }
+.ladder-item { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-left: 3px solid transparent; margin-bottom: 2px; transition: background 0.15s; }
+.ladder-item:hover { background: var(--neutral-50); }
+.ladder-item.current { background: var(--brand-bg); border-left-color: var(--brand); font-weight: 600; }
+.ladder-item .arrow { width: 16px; text-align: center; font-size: 14px; color: var(--neutral-500); }
+.ladder-item.current .arrow { color: var(--brand); }
+.ladder-item .name { flex: 1; font-size: 13px; }
+.ladder-item .price { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--neutral-900); min-width: 70px; text-align: right; }
+.ladder-item .diff { font-size: 12px; font-variant-numeric: tabular-nums; min-width: 64px; text-align: right; color: var(--neutral-500); }
+.ladder-item .diff.pos { color: var(--green); } .ladder-item .diff.neg { color: var(--brand); }
+.ladder-item .tag { font-size: 11px; color: var(--neutral-500); background: var(--neutral-100); padding: 2px 8px; border-radius: 4px; min-width: 44px; text-align: center; }
+.ladder-item.current .tag { background: var(--brand); color: white; }
+/* 黄金分割位的 tag 用淡金色区分 */
+.ladder-item .tag.gold { background: #FEF3C7; color: #92400E; }
+/* 价格阶梯分组小标题 */
+.ladder-group-title {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 11px; font-weight: 600; color: var(--neutral-500);
+  letter-spacing: 0.5px; margin: 14px 4px 6px;
+  text-transform: uppercase;
+}
+.ladder-group-title:first-child { margin-top: 0; }
+.ladder-group-title::before, .ladder-group-title::after {
+  content: ''; flex: 1; height: 1px; background: var(--neutral-200);
+}
+.ladder-group-title.pivot { color: var(--brand); }
+.ladder-group-title.pivot::before, .ladder-group-title.pivot::after { background: var(--brand-light); }
+
+/* NEXTDAY_DASH_MARK: 次日操作预判样式 */
+.nextday-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; }
+@media (max-width: 900px) { .nextday-grid { grid-template-columns: 1fr; } }
+.nextday-card { background: var(--neutral-50); border-radius: 10px; padding: 20px; border: 1px solid var(--neutral-200); }
+.nextday-card-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--neutral-200); }
+.nextday-card-title .pos { font-size: 15px; font-weight: 600; color: var(--neutral-900); display: flex; gap: 8px; align-items: center; }
+/* DUAL_TF_MARK */
+.nextday-card-title .pos-chip { display: inline-block; padding: 3px 10px; border-radius: 999px; background: var(--brand-light); color: var(--brand-dark); font-size: 13px; font-weight: 600; }
+.nextday-card-title .pos-chip.m60 { background: #FEF3C7; color: #92400E; }
+.nextday-card-title .pos-chip.flat { background: var(--neutral-100); color: var(--neutral-500); }
+.velocity-note.m60 { border-left-color: #D97706; margin-top: 8px; }
+.nextday-card-title .risk-badge { font-size: 11px; padding: 3px 10px; border-radius: 999px; font-weight: 600; }
+.nextday-card-title .risk-badge.high { background: var(--brand); color: white; }
+.nextday-card-title .risk-badge.mid { background: #FEF3C7; color: #92400E; }
+.nextday-card-title .risk-badge.low { background: var(--green-light); color: var(--green); }
+.nextday-card-title .risk-badge.threshold { background: var(--brand); color: white; }
+
+.exit-progress-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.exit-progress-bar .label { font-size: 12px; color: var(--neutral-500); flex-shrink: 0; }
+.exit-progress-bar .track { flex: 1; height: 10px; background: var(--neutral-200); border-radius: 5px; overflow: hidden; }
+.exit-progress-bar .fill { height: 100%; background: linear-gradient(90deg, var(--brand) 0%, var(--accent) 100%); border-radius: 5px; transition: width 0.6s; }
+.exit-progress-bar .count { font-size: 13px; font-weight: 600; color: var(--neutral-900); font-variant-numeric: tabular-nums; }
+
+.vote-list { display: flex; flex-direction: column; gap: 8px; }
+.vote-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; transition: background 0.15s; }
+.vote-item.triggered { background: var(--brand-bg); }
+.vote-item .icon { width: 18px; height: 18px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; }
+.vote-item.triggered .icon { background: var(--brand); color: white; }
+.vote-item:not(.triggered) .icon { background: var(--neutral-200); color: var(--neutral-500); }
+.vote-item .name { font-size: 13px; color: var(--neutral-900); font-weight: 500; flex-shrink: 0; }
+.vote-item .hint { font-size: 11px; color: var(--neutral-500); margin-left: auto; text-align: right; }
+
+.dist-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.dist-row .label { width: 100px; font-size: 12px; color: var(--neutral-700); font-weight: 500; flex-shrink: 0; }
+.dist-row .track { flex: 1; height: 12px; background: var(--neutral-200); border-radius: 6px; overflow: hidden; }
+.dist-row .fill { height: 100%; border-radius: 6px; transition: width 0.6s; }
+.dist-row .fill.long { background: linear-gradient(90deg, var(--green) 0%, #6EE7B7 100%); }
+.dist-row .fill.short { background: linear-gradient(90deg, var(--brand) 0%, var(--accent) 100%); }
+.dist-row .value { width: 80px; text-align: right; font-size: 13px; font-weight: 600; color: var(--neutral-900); font-variant-numeric: tabular-nums; }
+
+.velocity-note { margin-top: 14px; padding: 10px 12px; background: white; border-left: 3px solid var(--brand); border-radius: 4px; font-size: 12px; color: var(--neutral-700); line-height: 1.6; }
+
+.energy-list { display: flex; flex-direction: column; gap: 10px; }
+.energy-item { padding: 10px 12px; border-radius: 6px; border-left: 3px solid; }
+.energy-item.support { background: var(--green-light); border-color: var(--green); }
+.energy-item.pressure { background: var(--brand-bg); border-color: var(--brand); }
+.energy-item.turning { background: #FEF3C7; border-color: #BF8F00; }
+.energy-item .head { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+.energy-item.support .head { color: var(--green); }
+.energy-item.pressure .head { color: var(--brand); }
+.energy-item.turning .head { color: #92400E; }
+.energy-item .name { font-size: 13px; font-weight: 600; color: var(--neutral-900); margin-bottom: 2px; }
+.energy-item .detail { font-size: 11px; color: var(--neutral-700); font-variant-numeric: tabular-nums; }
+
+.empty-state { padding: 20px; text-align: center; color: var(--neutral-500); font-size: 13px; }
+.factor-group { border: 1px solid var(--neutral-200); border-radius: 10px; margin-bottom: 12px; overflow: hidden; transition: box-shadow 0.2s; }
+.factor-group:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+.factor-group-header { display: grid; grid-template-columns: 32px 1fr 160px 80px; align-items: center; padding: 14px 16px; cursor: pointer; user-select: none; background: white; transition: background 0.15s; }
+.factor-group-header:hover { background: var(--neutral-50); }
+.factor-group-header .caret { color: var(--neutral-500); transition: transform 0.2s; font-size: 12px; }
+.factor-group.open .caret { transform: rotate(90deg); }
+.factor-group-header .name { font-weight: 600; color: var(--neutral-900); font-size: 14px; }
+.factor-group-header .score-bar { display: flex; align-items: center; gap: 8px; }
+.factor-group-header .score-bar .track { flex: 1; height: 8px; background: var(--neutral-100); border-radius: 4px; position: relative; }
+.factor-group-header .score-bar .midline { position: absolute; top: -3px; left: 50%; width: 1px; height: 14px; background: var(--neutral-300); }
+.factor-group-header .score-bar .fill { position: absolute; top: 0; height: 100%; border-radius: 4px; }
+.factor-group-header .score-bar .fill.pos { background: var(--green); left: 50%; }
+.factor-group-header .score-bar .fill.neg { background: var(--brand); right: 50%; }
+.factor-group-header .score-value { font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; font-size: 14px; }
+.factor-group-header .score-value.pos { color: var(--green); } .factor-group-header .score-value.neg { color: var(--brand); } .factor-group-header .score-value.neutral { color: var(--neutral-500); }
+.factor-group-header .delta { display: inline-block; margin-left: 10px; font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 999px; }
+.factor-group-header .delta.up { background: var(--green-light); color: var(--green); }
+.factor-group-header .delta.down { background: var(--brand-light); color: var(--brand); }
+.factor-group-header .delta.flat { background: var(--neutral-100); color: var(--neutral-500); }
+.total-score-meta { display: flex; gap: 8px; align-items: baseline; margin-top: 6px; font-size: 13px; color: var(--neutral-500); }
+.total-score-meta .delta { font-weight: 600; padding: 2px 10px; border-radius: 999px; }
+.total-score-meta .delta.up { background: var(--green-light); color: var(--green); }
+.total-score-meta .delta.down { background: var(--brand-light); color: var(--brand); }
+.total-score-meta .delta.flat { background: var(--neutral-100); color: var(--neutral-500); }
+.regime-switch { display: block; margin-top: 8px; font-size: 12px; padding: 6px 12px; background: #FEF3C7; color: #92400E; border-radius: 6px; border-left: 3px solid #BF8F00; }
+.factor-details { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; border-top: 1px solid transparent; }
+.factor-group.open .factor-details { max-height: 800px; border-top-color: var(--neutral-200); }
+.factor-details-inner { padding: 6px 16px 12px; }
+.factor-row { display: grid; grid-template-columns: 110px 1fr 150px 60px; align-items: center; padding: 8px 0; border-bottom: 1px dashed var(--neutral-100); font-size: 13px; }
+.factor-row:last-child { border-bottom: none; }
+.factor-row .fname { color: var(--neutral-700); font-weight: 500; }
+.factor-row .fdetail { color: var(--neutral-500); font-size: 12px; font-variant-numeric: tabular-nums; }
+.factor-row .fjudge { font-size: 12px; color: var(--neutral-700); }
+.factor-row .fscore { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+.factor-row .fscore.pos { color: var(--green); } .factor-row .fscore.neg { color: var(--brand); } .factor-row .fscore.zero { color: var(--neutral-400); }
+.total-score-card { background: linear-gradient(135deg, var(--brand-bg) 0%, white 100%); border: 1px solid var(--brand-light); border-radius: 10px; padding: 20px 24px; margin-top: 16px; }
+.total-score-card .header-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+.total-score-card .title { font-size: 14px; color: var(--neutral-700); }
+.total-score-card .value { font-size: 32px; font-weight: 700; color: var(--brand-dark); font-variant-numeric: tabular-nums; }
+.total-score-card .value-sub { font-size: 14px; color: var(--neutral-500); margin-left: 4px; }
+.total-score-bar { height: 24px; background: linear-gradient(90deg, var(--brand) 0%, var(--brand) 30%, var(--neutral-100) 30%, var(--neutral-100) 70%, var(--green) 70%, var(--green) 100%); border-radius: 6px; position: relative; margin: 12px 0 8px; }
+.total-score-bar .marker { position: absolute; top: -6px; width: 4px; height: 36px; background: var(--neutral-900); border-radius: 2px; }
+.total-score-bar .marker::before { content: '▼'; position: absolute; top: -14px; left: 50%; transform: translateX(-50%); color: var(--neutral-900); font-size: 12px; }
+.total-score-legend { display: flex; justify-content: space-between; font-size: 11px; color: var(--neutral-500); }
+.tabs { display: flex; gap: 0; border-bottom: 1px solid var(--neutral-200); margin-bottom: 18px; }
+.tab { padding: 10px 20px; cursor: pointer; font-size: 14px; font-weight: 500; color: var(--neutral-500); border-bottom: 2px solid transparent; transition: all 0.15s; user-select: none; }
+.tab:hover { color: var(--neutral-700); }
+.tab.active { color: var(--brand); border-bottom-color: var(--brand); }
+.forecast-table { width: 100%; border-collapse: collapse; }
+.forecast-table th { background: var(--neutral-50); padding: 10px 14px; text-align: left; font-size: 12px; font-weight: 600; color: var(--neutral-700); border-bottom: 1px solid var(--neutral-200); }
+.forecast-table td { padding: 12px 14px; border-bottom: 1px solid var(--neutral-100); font-size: 13px; color: var(--neutral-700); font-variant-numeric: tabular-nums; }
+.forecast-table tr.total { background: var(--brand-bg); font-weight: 600; }
+.forecast-table tr.total td { color: var(--brand-dark); }
+.forecast-table .weight-cell { display: inline-flex; align-items: center; gap: 8px; }
+.forecast-table .weight-bar { width: 50px; height: 6px; background: var(--neutral-100); border-radius: 3px; overflow: hidden; }
+.forecast-table .weight-bar .fill { height: 100%; background: var(--brand); }
+.pct-pos { color: var(--green); font-weight: 600; } .pct-neg { color: var(--brand); font-weight: 600; }
+.prob-block { background: var(--neutral-50); border-radius: 8px; padding: 16px; margin-top: 14px; }
+.prob-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.prob-row:last-child { margin-bottom: 0; }
+.prob-row .plabel { width: 100px; font-size: 13px; color: var(--neutral-700); font-weight: 500; }
+.prob-row .ptrack { flex: 1; height: 14px; background: var(--neutral-200); border-radius: 7px; overflow: hidden; }
+.prob-row .pfill { height: 100%; background: linear-gradient(90deg, var(--brand) 0%, var(--accent) 100%); border-radius: 7px; transition: width 0.6s ease-out; }
+.prob-row .pval { font-size: 13px; font-weight: 600; color: var(--neutral-900); width: 50px; text-align: right; font-variant-numeric: tabular-nums; }
+.stock-bond { background: var(--neutral-50); border-radius: 10px; padding: 18px 20px; margin-top: 16px; }
+.stock-bond-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 14px; }
+.stock-bond-item .l { font-size: 11px; color: var(--neutral-500); margin-bottom: 4px; }
+.stock-bond-item .v { font-size: 16px; font-weight: 600; color: var(--neutral-900); font-variant-numeric: tabular-nums; }
+.stock-bond-item .s { font-size: 11px; color: var(--neutral-500); margin-top: 2px; }
+.stock-bond-conclude { padding: 12px 14px; background: var(--brand-bg); border-radius: 6px; border-left: 3px solid var(--brand); font-size: 13px; color: var(--brand-dark); }
+.footer { text-align: center; padding: 24px 0 8px; color: var(--neutral-500); font-size: 14px; }
+
+/* BRANDING_PATCH_MARK: 品牌样式 */
+.footer .brand-footer {
+  margin-bottom: 8px;
+  padding: 10px 14px;
+  border-radius: 4px;
+  background: var(--neutral-50);
+  color: var(--neutral-700);
+  font-size: 13px;
+  text-align: center;
+}
+.footer .brand-footer strong { color: var(--brand-dark); }
+
+/* BRANDING_PATCH_MARK: 角落水印（绑定 container，每页结构里都有） */
+.brand-watermark-tr {
+  position: absolute;
+  top: 22px;
+  right: 32px;
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(155, 28, 28, 0.55);
+  letter-spacing: 1px;
+  pointer-events: none;
+  z-index: 9998;
+  user-select: none;
+}
+.brand-watermark-bl {
+  margin-top: 16px;
+  text-align: center;
+  font-size: 13px;
+  color: rgba(120, 120, 120, 0.85);
+  letter-spacing: 3px;
+  user-select: none;
+}
+
+/* BRANDING_PATCH_MARK: 字号全档位放大（手机/微信查看友好） */
+/* 标题区 */
+.header h1 { font-size: 32px !important; }
+.header .meta { font-size: 15px !important; }
+.section h2 { font-size: 20px !important; }
+
+/* Hero 卡 */
+.hero-item .label { font-size: 13px !important; }
+.hero-item .value { font-size: 28px !important; }
+.hero-item .sub { font-size: 14px !important; }
+.hero-item.advice .value { font-size: 24px !important; }
+.hero-item .badge { font-size: 12px !important; }
+.dual-grid .dh { font-size: 13px !important; }
+.dual-grid .rk { font-size: 14px !important; }
+.dual-grid .dv { font-size: 22px !important; }
+.dual-grid .dv small { font-size: 14px !important; }
+.dual-grid .dv.state { font-size: 17px !important; }
+
+/* 板块内容 */
+.winrate-row .label { font-size: 15px !important; }
+.winrate-row .pct { font-size: 15px !important; }
+.state-summary { font-size: 15px !important; }
+
+/* 价格阶梯 */
+.ladder-item .arrow { font-size: 16px !important; }
+.ladder-item .name { font-size: 15px !important; }
+.ladder-item .price { font-size: 16px !important; }
+.ladder-item .diff { font-size: 14px !important; }
+.ladder-item .tag { font-size: 13px !important; }
+
+/* 因子组 */
+.factor-group-header .name { font-size: 16px !important; }
+
+/* 次日预判 */
+.nextday-card-title .pos { font-size: 17px !important; }
+.nextday-card-title .risk-badge { font-size: 13px !important; }
+.exit-progress-bar .label { font-size: 14px !important; }
+.exit-progress-bar .count { font-size: 15px !important; }
+.vote-item .icon { font-size: 14px !important; }
+.vote-item .name { font-size: 15px !important; }
+.vote-item .hint { font-size: 13px !important; }
+.dist-row .label { font-size: 14px !important; }
+.dist-row .value { font-size: 15px !important; }
+.velocity-note { font-size: 14px !important; }
+.nextday-card-title .pos-chip { font-size: 14px !important; }
+.energy-item .head { font-size: 14px !important; }
+.energy-item .name { font-size: 15px !important; }
+.energy-item .detail { font-size: 13px !important; }
+.footer .warn { background: var(--neutral-50); border-left: 3px solid var(--brand); padding: 10px 14px; text-align: left; border-radius: 4px; color: var(--neutral-700); margin-bottom: 16px; font-size: 13px; }
+</style>
+<style id="web-dashboard-layout">
+    .report-links{display:flex;gap:10px;flex-wrap:wrap;padding:18px 0;border-top:1px solid var(--neutral-200);margin-top:20px}
+    .report-links a{color:var(--brand-dark);font-size:14px;text-decoration:none;border:1px solid var(--neutral-200);border-radius:6px;padding:7px 12px;background:white}
+    .report-links a:hover{background:var(--brand-bg)}
+    [role=button]:focus-visible,a:focus-visible{outline:3px solid var(--brand);outline-offset:3px}
+    @media(max-width:600px){
+      .container{padding:20px 12px}.header{padding-bottom:16px;margin-bottom:20px}
+      .header h1{font-size:22px!important;line-height:1.45}.header .meta{font-size:12px!important;gap:6px 12px}.header .meta span{flex-wrap:wrap}
+      .brand-watermark-tr{display:none}.hero{padding:20px 16px;margin-bottom:20px}.hero-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px 12px}
+      .hero-item{min-width:0}.hero-item .value{font-size:25px!important}.hero-item.advice .value{font-size:20px!important}.hero-item .sub{font-size:12px!important}
+      .dual-grid{grid-template-columns:70px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);gap:10px 7px}
+      .dual-grid>span{min-width:0;overflow-wrap:anywhere}.dual-grid .dh{font-size:10px!important;letter-spacing:0}.dual-grid .rk{font-size:12px!important}
+      .dual-grid .dv{font-size:16px!important}.dual-grid .dv small{font-size:11px!important}.dual-grid .dv.state{font-size:12px!important}
+      .section{padding:18px 14px;margin-bottom:16px;min-width:0}.section h2{font-size:18px!important}.two-col,.nextday-grid{gap:0}
+      .winrate-row{gap:8px}.winrate-row .label{width:103px;font-size:13px!important}.winrate-row .pct{width:43px;font-size:13px!important}
+      .prob-block{padding:12px}.prob-row{gap:8px}.prob-row .plabel{width:92px}.prob-row .pval{width:43px}
+      .total-score-card{padding:15px}.total-score-legend{font-size:10px}.state-summary{font-size:13px!important}
+      .factor-group-header{grid-template-columns:14px minmax(0,1fr) 38px 76px;gap:4px;padding:12px 10px}
+      .factor-group-header .name{font-size:14px!important}.factor-group-header .score-value{font-size:13px}.factor-group-header .delta{margin-left:0;font-size:11px}
+      .factor-details-inner{padding:4px 12px 10px}.factor-row{grid-template-columns:minmax(0,1fr) auto;gap:4px;padding:11px 0}
+      .factor-row .fname{grid-area:1/1}.factor-row .fscore{grid-area:1/2}.factor-row .fdetail{grid-area:2/1/3/3;overflow-wrap:anywhere}.factor-row .fjudge{grid-area:3/1/4/3;text-align:left}
+      .factor-group.open .factor-details{max-height:none}.roll-context{overflow-wrap:anywhere}
+      .nextday-card{padding:14px;margin-bottom:12px}.nextday-card-title .pos{flex-wrap:wrap}.velocity-note{font-size:13px!important}
+      .tabs .tab{padding:10px 12px}.forecast-table,.forecast-table tbody{display:block}.forecast-table thead{display:none}
+      .forecast-table tr{display:grid;grid-template-columns:1fr 1fr 1fr;border:1px solid var(--neutral-200);border-radius:8px;margin-bottom:10px;padding:8px}
+      .forecast-table td{display:block;padding:4px;border:0;min-width:0;overflow-wrap:anywhere}.forecast-table td:first-child,.forecast-table td:last-child{grid-column:1/-1}
+      .forecast-table td:nth-child(2):before{content:'权重'}.forecast-table td:nth-child(3):before{content:'目标价'}.forecast-table td:nth-child(4):before{content:'预期涨跌'}
+      .forecast-table td:before{display:block;color:var(--neutral-500);font-size:11px;font-weight:400}.forecast-table .weight-bar{display:none}
+      .forecast-table+div{grid-template-columns:1fr!important;gap:12px!important}
+      .ladder-item{display:grid;grid-template-columns:12px minmax(0,1fr) 65px 55px;gap:5px;padding:9px 5px}
+      .ladder-item .name{font-size:13px!important}.ladder-item .price{font-size:14px!important;min-width:0}.ladder-item .diff{font-size:12px!important;min-width:0}
+      .ladder-item .tag{grid-column:2;justify-self:start;font-size:10px!important;min-width:0;padding:1px 6px}
+      .stock-bond{padding:14px}.stock-bond-grid{grid-template-columns:1fr 1fr}.stock-bond-conclude{font-size:12px}
+      .report-links{gap:8px}.report-links a{font-size:13px;padding:7px 9px}
+    }</style><style id="tl-report-design">/* Public report: original model content, refined reading layout and embedded flow. */
+:root{--bg:#f4f5f7;--brand:#a22c35;--brand-dark:#75252c;--brand-bg:#fcf4f4;--brand-light:#f9e4e5;--neutral-900:#222b38;--neutral-700:#475465;--neutral-500:#7b8593;--neutral-200:#e6e9ee;--neutral-50:#f7f8fa;--green:#187f6d}
+body{background:var(--bg);font-variant-numeric:tabular-nums}
+.container{max-width:1220px;padding:38px 26px 24px}.brand-watermark-tr{display:none}
+.header{border:0;padding:0;margin:0 0 20px}.brandline{color:var(--brand);font-size:12px;letter-spacing:2px;font-weight:700;margin-bottom:9px}
+.report-heading{display:flex;align-items:center;justify-content:space-between;gap:20px}.header h1{font-size:30px!important;letter-spacing:-.5px;line-height:1.35;margin:0}.header h1 span{font-size:17px;color:var(--neutral-500);font-weight:400;white-space:nowrap;letter-spacing:0}
+.report-date{text-align:right;flex:none}.report-date strong{display:block;color:var(--neutral-700);font-size:18px}.report-date small{color:var(--neutral-500);font-size:11px}
+.report-meta{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;color:var(--neutral-500);font-size:12px}.report-meta span+span:before{content:'·';margin-right:14px;color:#aeb6c1}
+.daily-note{background:#fff;border:1px solid var(--neutral-200);border-radius:13px;display:flex;align-items:flex-start;gap:18px;padding:17px 22px;margin-bottom:22px;box-shadow:0 3px 12px #182d4b03}
+.brief-label{white-space:nowrap;color:var(--brand);font-size:12px;font-weight:700;padding-top:2px;letter-spacing:.7px}.daily-note p{font-size:14px;color:var(--neutral-700);line-height:1.8;margin:0}
+.hero{background:linear-gradient(115deg,#74272d,#a3323c);border-radius:18px;padding:28px 30px;box-shadow:0 8px 22px #74272d10;margin-bottom:24px}.hero-item .label{font-size:12px!important;opacity:.75}.hero-item .value{font-size:29px!important}.hero-item .sub{font-size:12px!important;opacity:.85}.hero-item.advice .value{font-size:23px!important}.hero-dual{margin-top:24px;padding-top:20px}.dual-grid .dv{font-size:20px!important}.dual-grid .dv.state{font-size:15px!important}.dual-grid .dh{font-size:11px!important}.dual-grid .rk{font-size:12px!important}
+.section{padding:24px;border:1px solid var(--neutral-200);border-radius:16px;box-shadow:0 4px 18px #182d4b02;margin-bottom:22px}.section h2{font-size:18px!important;color:#313d4d;margin-bottom:20px;padding-bottom:14px;letter-spacing:.1px}.section h2:before{height:15px;width:3px}.two-col{gap:22px}.two-col>.section{margin-bottom:22px}.total-score-card{background:#fffafb;border-color:#f3dee0}.total-score-bar{height:18px}.factor-group{border-radius:10px;box-shadow:none!important}.factor-group-header{background:#fcfcfd;padding:15px 17px}.factor-group-header .name{font-size:15px!important}.factor-details-inner{padding:7px 18px 13px}.factor-row{gap:10px;padding:10px 0;font-size:13px}.factor-group-header .delta{font-size:11px}.roll-context{font-size:12px!important;background:#f7f8fa!important;padding:10px 16px!important}.nextday-card{border-radius:11px;background:#f9fafb}.energy-item.turning{background:#faf4e5;border-color:#c7a75d}.forecast-table td{padding:14px}.footer{font-size:12px;padding-top:12px}.footer .warn{background:transparent;border-left:2px solid #d5a1a6;font-size:11px;line-height:1.8}.brand-watermark-bl{font-size:11px}.footer .brand-footer{background:transparent}
+.flow-section{padding:26px}.flow-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:20px}.flow-heading h2{border:0;margin:0;padding:0}.flow-heading p{color:var(--neutral-500);font-size:12px;margin:5px 0 0 13px}.flow-dates{display:flex;gap:7px}
+.flow-date{font:inherit;font-size:13px;border:1px solid var(--neutral-200);background:#fff;color:var(--neutral-700);border-radius:9px;min-width:70px;padding:7px 10px;cursor:pointer}.flow-date small{display:block;color:var(--neutral-500);font-size:10px;margin-top:2px}.flow-date[aria-pressed=true]{background:var(--brand-dark);border-color:var(--brand-dark);color:white;box-shadow:0 3px 8px #74272d12}.flow-date[aria-pressed=true] small{color:#eac9cb}.flow-date:hover:not([aria-pressed=true]){background:var(--brand-bg)}
+.flow-status{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--neutral-700);font-size:12px;margin-bottom:14px}.flow-status strong{font-size:14px;color:#2b3b4b}.flow-contract{background:#eef2f7;color:#516277;border-radius:5px;padding:2px 7px;font-size:11px}.flow-check{margin-left:auto;color:#7d8b98;font-size:11px}
+.flow-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:20px}.flow-kpi{border:1px solid #edf0f4;background:#f8f9fb;border-radius:11px;padding:14px 16px}.flow-kpi .label{font-size:11px;color:var(--neutral-500)}.flow-kpi strong{display:block;font-size:25px;font-weight:650;color:#26384b;margin:4px 0 1px;line-height:1.3}.flow-kpi small{font-size:10px;color:#8a929d}.flow-kpi strong.negative,.flow-negative{color:var(--brand)}.flow-kpi strong.positive,.flow-positive{color:var(--green)}
+.flow-chart-card{border:1px solid var(--neutral-200);border-radius:12px;overflow:hidden;margin-bottom:20px;background:#fff}.flow-chart-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px 0}.flow-chart-heading h3,.flow-subcard h3,.flow-periods h3{font-size:14px;font-weight:600;color:#344356}.flow-chart-heading span{font-size:10px;color:var(--neutral-500)}.flow-chart{height:335px;padding:0 8px;touch-action:pan-y}.flow-chart svg{display:block;width:100%;height:100%;outline-offset:-3px}.flow-readout{border-top:1px solid #edf0f4;background:#fafbfc;padding:10px 18px;font-size:11px;color:#667587;min-height:39px;line-height:1.7;display:flex;gap:15px;flex-wrap:wrap}.flow-readout strong{color:#35475b}.flow-readout span{white-space:nowrap}
+.flow-detail-grid{display:grid;grid-template-columns:1.25fr 1fr;gap:16px;margin-bottom:20px}.flow-subcard{background:#fff;border:1px solid var(--neutral-200);border-radius:12px;padding:17px 18px}.flow-subcard h3{margin-bottom:12px}.flow-subcard .subcaption{font-size:10px;color:#89939f;line-height:1.6;margin-top:12px}
+.flow-stack{height:15px;border-radius:5px;overflow:hidden;display:flex;margin-bottom:15px}.flow-stack span{height:100%;min-width:0}.flow-kinds{display:grid;grid-template-columns:1fr 1fr;gap:10px 20px}.flow-kind{display:grid;grid-template-columns:8px 28px 1fr 40px;align-items:center;gap:6px;font-size:11px;color:#667587}.flow-kind i{height:6px;width:6px;border-radius:2px}.flow-kind b{text-align:right;font-weight:500;color:#344356}.flow-kind em{text-align:right;font-size:10px;font-style:normal;color:#8a929d}
+.flow-band{margin:14px 0}.flow-band-heading{display:flex;justify-content:space-between;gap:10px;font-size:11px;color:#647488}.flow-band-heading strong{font-weight:600;font-size:12px}.flow-band-heading span small{font-size:10px;color:#8b95a0;margin-left:5px}.flow-band-track{height:6px;background:#f0f3f6;border-radius:4px;margin-top:8px;overflow:hidden}.flow-band-track span{height:100%;display:block;border-radius:4px;background:#4f8b7d}.flow-band-track span.negative{background:#b55c62}
+.flow-periods{border:1px solid var(--neutral-200);border-radius:12px;padding:17px 18px}.flow-periods h3{margin-bottom:9px}.flow-period-table{width:100%;border-collapse:collapse;text-align:right;font-size:12px;color:#526174}.flow-period-table th{font-size:10px;font-weight:500;color:#9099a4;padding:10px 7px;border-bottom:1px solid #e9edf2}.flow-period-table td{padding:12px 7px;border-bottom:1px solid #f0f2f5}.flow-period-table th:first-child,.flow-period-table td:first-child{text-align:left}.flow-period-table tbody tr:last-child td{border:0;background:#fafbfc}.flow-period-table td:first-child{color:#344356;font-weight:500}.flow-periods .subcaption{font-size:10px;color:#89939f;line-height:1.7;margin-top:10px}.flow-footnote{color:#85909d;font-size:10px;line-height:1.85;margin-top:15px}.flow-source-warning{color:#996c38}
+button:focus-visible,[role=button]:focus-visible,a:focus-visible{outline:2px solid var(--brand);outline-offset:3px}
+@media(max-width:900px){.flow-heading{flex-wrap:wrap}.flow-dates{margin-left:auto}.flow-detail-grid{grid-template-columns:1fr}.flow-kinds{grid-template-columns:repeat(4,1fr);gap:10px}.flow-kind{grid-template-columns:6px 25px 1fr}.flow-kind em{grid-column:2/4}.flow-period-table{font-size:11px}}
+@media(max-width:600px){
+ .container{padding:22px 12px 18px}.brandline{font-size:10px;letter-spacing:1.5px}.report-heading{gap:9px;align-items:flex-start}.header h1{font-size:23px!important}.header h1 span{display:block;font-size:13px;margin-top:3px;letter-spacing:1px}.report-date strong{font-size:14px}.report-date small{font-size:10px}.report-meta{font-size:10px;gap:7px}.report-meta span+span:before{margin-right:7px}
+ .daily-note{display:block;padding:14px 16px;margin-bottom:17px;border-radius:11px}.brief-label{font-size:10px;margin-bottom:6px}.daily-note p{font-size:12px;line-height:1.85}
+ .hero{padding:21px 17px;border-radius:15px;margin-bottom:17px}.hero-grid{gap:20px 12px}.hero-item .value{font-size:25px!important}.hero-item.advice .value{font-size:20px!important}.hero-item .sub{font-size:11px!important}.hero-item .label{font-size:11px!important}.hero-dual{padding-top:16px;margin-top:20px}.dual-grid{grid-template-columns:68px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);gap:10px 7px}.dual-grid .dh{font-size:9px!important}.dual-grid .rk{font-size:11px!important}.dual-grid .dv{font-size:15px!important}.dual-grid .dv.state{font-size:11px!important}
+ .section{padding:19px 15px;border-radius:13px;margin-bottom:17px}.section h2{font-size:16px!important;margin-bottom:16px}.two-col{gap:0}.two-col>.section{margin-bottom:17px}.factor-row{gap:4px}.factor-group-header .name{font-size:13px!important}.nextday-card{padding:13px}.footer .warn{font-size:10px}.footer .brand-footer{font-size:11px}
+ .flow-section{padding:19px 14px}.flow-heading{display:block;margin-bottom:15px}.flow-heading h2{margin-bottom:0}.flow-heading p{font-size:10px;margin-top:4px}.flow-dates{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin-top:16px}.flow-date{min-width:0;padding:7px 3px;font-size:12px;border-radius:7px}.flow-date small{font-size:9px}
+ .flow-status{font-size:10px;gap:6px;margin-bottom:12px}.flow-status strong{font-size:12px}.flow-check{font-size:9px;margin-left:0;flex-basis:100%}.flow-contract{font-size:10px}.flow-kpis{grid-template-columns:1fr 1fr;gap:8px;margin-bottom:15px}.flow-kpi{padding:11px 12px;border-radius:8px}.flow-kpi .label{font-size:10px}.flow-kpi strong{font-size:22px;margin-top:3px}.flow-kpi small{font-size:9px}
+ .flow-chart-card{margin-bottom:15px}.flow-chart-heading{display:block;padding:13px 13px 0}.flow-chart-heading h3{font-size:12px}.flow-chart-heading span{font-size:9px;display:block;margin-top:3px}.flow-chart{height:335px;padding:0}.flow-readout{font-size:10px;padding:9px 12px;gap:2px 12px;min-height:54px}
+ .flow-detail-grid{gap:13px;margin-bottom:15px}.flow-subcard{padding:14px}.flow-subcard h3,.flow-periods h3{font-size:12px}.flow-kinds{grid-template-columns:1fr 1fr;gap:10px 14px}.flow-kind{grid-template-columns:6px 26px 1fr 35px;font-size:10px;gap:4px}.flow-kind em{grid-column:auto;font-size:9px}.flow-stack{height:12px}
+ .flow-periods{padding:14px 12px}.flow-period-table thead{display:none}.flow-period-table,.flow-period-table tbody{display:block}.flow-period-table tr{display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;border-bottom:1px solid #edf0f4;padding:10px 0}.flow-period-table td{display:flex;justify-content:space-between;text-align:right;gap:5px;padding:2px 0;border:0;font-size:10px}.flow-period-table td:first-child{grid-column:1/-1;text-align:left;font-size:11px;margin-bottom:3px}.flow-period-table td:before{content:attr(data-label);color:#8c96a2;font-size:9px}.flow-period-table td:first-child:before{content:none}.flow-period-table tr:last-child{border:0}.flow-period-table tbody tr:last-child td{background:transparent}.flow-period-table td:last-child{grid-column:1/-1}.flow-periods .subcaption,.flow-footnote{font-size:9px}
+}
+</style></head>
+<body>
+<div class="container">
+<!-- BRANDING_PATCH_MARK: 右上角水印 -->
+<div class="brand-watermark-tr">【中泰固收团队】</div>
+
+  <header class="header"><div class="brandline">中泰固收 · 量化研究</div><div class="report-heading"><h1>TL 量化择时 <span>· 每日报告</span></h1><div class="report-date"><strong>2026.11.26</strong><small>收盘更新</small></div></div><div class="report-meta"><span>30年期国债期货</span><span>熊市趋势</span><span>日线 × 60分钟</span></div></header><section class="daily-note" aria-label="每日简报"><div class="brief-label">每日简报</div><p>TL2703收于117.16，日线评分-25.1（较昨日-14.2），60分钟-28.4，两周期均持空。C 趋势结构是主要拖累；换月调整试算分别为-13.5、-21.6，正式信号保持原口径。</p></section>
+<div class="hero">
+    <div class="hero-grid">
+      <div class="hero-item advice">
+        <div class="label">日线模型建议</div>
+        <div class="value">— 做空 —</div>
+        <div class="sub">日线实际：空头持仓 · 综合评分 -25.1 / ±100</div>
+      </div>
+      <div class="hero-item">
+        <div class="label">当前价</div>
+        <div class="value">117.160</div>
+        <div class="sub">基准日收盘</div>
+      </div>
+      <div class="hero-item">
+        <div class="label">月度目标 (20D)</div>
+        <div class="value">116.579</div>
+        <div class="sub">综合预测 · 上涨概率 58.5%</div>
+      </div>
+      <div class="hero-item">
+        <div class="label">参考止损</div>
+        <div class="value">±1.2700</div>
+        <div class="sub">2×ATR · ATR(14)=0.6350</div>
+      </div>
+    </div>
+    <div class="hero-dual"><div class="dual-grid"><span class="dh"></span><span class="dh">综合评分 / 开仓评分线</span><span class="dh">真实持仓</span><span class="dh">市场状态</span><span class="rk">日线 · 2026-11-26</span><span class="dv hit">-25.1 <small>/ −15</small></span><span class="dv">空头持仓</span><span class="dv state">🐻📉 熊市趋势</span><span class="rk">60分钟 · 15:15</span><span class="dv hit">-28.4 <small>/ −15</small></span><span class="dv">持空</span><span class="dv state">🐻📉 熊市趋势</span></div></div>
+  </div>
+
+  <div class="two-col">
+    <div class="section">
+      <h2>市场状态判断</h2>
+      <div style="margin-bottom: 8px; font-size: 13px; color: var(--neutral-500);">
+        判断依据：过去 40 日动量信号 vs 均值回归信号的实际胜率对比
+      </div>
+      <div style="margin-top: 18px;">
+        <div class="winrate-row">
+          <div class="label">动量胜率（趋势市）</div>
+          <div class="bar-wrap"><div class="bar momentum" style="width: 48.4%"></div></div>
+          <div class="pct">48.4%</div>
+        </div>
+        <div class="winrate-row">
+          <div class="label">回归胜率（震荡市）</div>
+          <div class="bar-wrap"><div class="bar reversion" style="width: 42.1%"></div></div>
+          <div class="pct">42.1%</div>
+        </div>
+      </div>
+      <div class="prob-block">
+        <div class="prob-row">
+          <div class="plabel">趋势市概率</div>
+          <div class="ptrack"><div class="pfill" style="width: 60.5%"></div></div>
+          <div class="pval">60.5%</div>
+        </div>
+        <div class="prob-row">
+          <div class="plabel">震荡市概率</div>
+          <div class="ptrack"><div class="pfill" style="width: 39.5%; opacity: 0.5;"></div></div>
+          <div class="pval">39.5%</div>
+        </div>
+      </div>
+      <div class="state-tag">
+        🐻📉 熊市趋势
+      </div>
+      
+      <div class="state-summary">
+        胜率差 +6.3% → 中等置信度<br>
+        近 10 日变化：动量 -2.5% · 回归 -5.7%
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>综合评分</h2>
+      <div class="total-score-card">
+        <div class="header-row">
+          <div class="title">
+            22 因子综合得分
+            <div class="total-score-meta"><span class="delta down">▼ 14.2</span><span>昨日 -10.9</span></div>
+          </div>
+          <div>
+            <span class="value">-25.1</span>
+            <span class="value-sub">/ ±100</span>
+          </div>
+        </div>
+        <div class="total-score-bar">
+          <div class="marker" style="left: calc(37.45% - 2px);"></div>
+        </div>
+        <div class="total-score-legend">
+          <span>-100 强空</span><span>-30</span>
+          <span style="color: var(--neutral-700); font-weight: 600;">0 中性 · 刻度非开仓门槛</span>
+          <span>+30</span><span>+100 强多</span>
+        </div>
+        <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--neutral-200); font-size: 13px; color: var(--neutral-700);">
+          开空评分线 −15，禁止开多；官方建议：<strong>— 做空 —</strong>；日线实际：<strong>空头持仓</strong>
+        </div>
+      </div>
+      <div style="margin-top: 18px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+        <div style="text-align: center; padding: 12px; background: var(--neutral-50); border-radius: 8px;">
+          <div style="font-size: 11px; color: var(--neutral-500);">ATR(14)</div>
+          <div style="font-size: 18px; font-weight: 600; margin-top: 2px;">0.6350</div>
+        </div>
+        <div style="text-align: center; padding: 12px; background: var(--neutral-50); border-radius: 8px;">
+          <div style="font-size: 11px; color: var(--neutral-500);">HV20</div>
+          <div style="font-size: 18px; font-weight: 600; margin-top: 2px;">6.96%</div>
+        </div>
+        <div style="text-align: center; padding: 12px; background: var(--neutral-50); border-radius: 8px;">
+          <div style="font-size: 11px; color: var(--neutral-500);">趋势强度</div>
+          <div style="font-size: 18px; font-weight: 600; margin-top: 2px;">0.60</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="section flow-section" id="daily-flow" aria-label="每日分时单流"><div class="flow-heading"><div><h2>每日分时单流</h2><p>近五个交易日 · 当日主力合约</p></div><div class="flow-dates" id="flow-dates" aria-label="选择单流日期"></div></div><div class="flow-status" id="flow-status" aria-live="polite"></div><div class="flow-kpis" id="flow-kpis"></div><div class="flow-chart-card"><div class="flow-chart-heading"><h3>日内价格与开仓方向</h3><span>5分钟聚合 · 午间休市压缩显示 · 触碰曲线查看</span></div><div class="flow-chart" id="flow-chart"></div><div class="flow-readout" id="flow-readout"></div></div><div class="flow-detail-grid"><div class="flow-subcard"><h3>八类开平结构</h3><div class="flow-stack" id="flow-stack"></div><div class="flow-kinds" id="flow-kinds"></div><p class="subcaption" id="flow-close-note"></p></div><div class="flow-subcard"><h3>分价带净增仓 <small style="font-size:10px;font-weight:400;color:#89939f">/ 手</small></h3><div id="flow-bands"></div><p class="subcaption">按当日快照价格区间等分三档；条形长度为绝对变化，正负方向以数值为准。</p></div></div><div class="flow-periods"><h3>分时段拆解</h3><table class="flow-period-table"><thead><tr><th>时段</th><th>成交</th><th>净增仓</th><th>买卖比</th><th>开仓净多</th><th>价格</th></tr></thead><tbody id="flow-period-body"></tbody></table><p class="subcaption">成交及持仓单位为手。早盘含集合竞价；早盘、午后、尾盘覆盖全天，“最后30分钟”为尾盘子集。</p></div><p class="flow-footnote">来源：同花顺 iFinD 快照；方向和开平性质为推导值，仅作描述性跟踪。开仓净多为多开减空开，并非资金金额。主力持仓在换月期受移仓影响。<span class="flow-source-warning" id="flow-source-note"></span></p></section>
+<div class="section">
+    <h2>因子打分明细 · 点击展开</h2>
+    <div style="font-size: 12px; color: var(--neutral-500); margin-bottom: 14px;">
+      mode = bear_trend · 板块分 = 板块原始分 × 当日权重 × 100；子项为看盘参考，不参与汇总
+    </div>
+    <div id="factor-groups"></div>
+  </div>
+
+  
+    <div class="section">
+        <h2>次日操作预判</h2>
+        <div class="nextday-grid">
+            <div class="nextday-card">
+                
+    <div class="nextday-card-title">
+        <div class="pos"><span class="pos-chip">日线 空头持仓</span><span class="pos-chip m60">60分钟 持空</span></div>
+        
+    </div>
+    
+                <div class="velocity-note">空单按ATR固定止损、移动止损或反向做多信号退出。多头趋势衰减投票不适用于空单。</div><div class="velocity-note m60">⏱ 60 分钟 15:15　评分 <strong>-28.4</strong> / 空≤-15，禁开多　持仓 <strong>持空</strong>；持仓退出另按交易规则。</div>
+            </div>
+            
+            <div class="nextday-card">
+                <div style="font-size:14px;font-weight:600;color:var(--neutral-700);margin-bottom:14px;">
+                    因子 10 日能量榜
+                </div>
+                <div class="energy-list">
+                <div class="energy-item turning">
+                    <div class="head">⇌ 转折信号</div>
+                    <div class="name">A 动量外推</div>
+                    <div class="detail">5日累计 -10.2 → 恶化中</div>
+                </div>
+                
+                <div class="energy-item turning">
+                    <div class="head">⇌ 转折信号</div>
+                    <div class="name">C 趋势结构</div>
+                    <div class="detail">5日累计 -11.0 → 恶化中</div>
+                </div>
+                
+                <div class="energy-item turning">
+                    <div class="head">⇌ 转折信号</div>
+                    <div class="name">D 持仓资金</div>
+                    <div class="detail">5日累计 -8.4 → 恶化中</div>
+                </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+    
+
+  <div class="section">
+    <h2>三方法综合预测</h2>
+    <div class="tabs">
+      <div class="tab active" data-tab="monthly">月度（20 日）</div>
+      <div class="tab" data-tab="quarterly">季度（60 日）</div>
+    </div>
+    <table class="forecast-table">
+      <thead>
+        <tr>
+          <th>方法</th><th style="width: 140px;">权重</th>
+          <th>目标价</th><th>预期涨跌</th><th>说明</th>
+        </tr>
+      </thead>
+      <tbody id="forecast-body"></tbody>
+    </table>
+    <div style="margin-top: 18px; padding: 16px; background: var(--neutral-50); border-radius: 8px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+      <div>
+        <div style="font-size: 12px; color: var(--neutral-500); margin-bottom: 4px;">ATR 区间（<span id="period-label">月度</span>）</div>
+        <div style="font-size: 14px; font-weight: 600; color: var(--neutral-700); font-variant-numeric: tabular-nums;" id="atr-range">—</div>
+      </div>
+      <div>
+        <div style="font-size: 12px; color: var(--neutral-500); margin-bottom: 4px;">历史相似区间</div>
+        <div style="font-size: 14px; font-weight: 600; color: var(--neutral-700); font-variant-numeric: tabular-nums;" id="hist-range">—</div>
+      </div>
+      <div>
+        <div style="font-size: 12px; color: var(--neutral-500); margin-bottom: 4px;">上涨概率</div>
+        <div style="font-size: 14px; font-weight: 600; color: var(--brand); font-variant-numeric: tabular-nums;" id="up-prob">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>关键价位阶梯</h2>
+    <div style="font-size: 12px; color: var(--neutral-500); margin-bottom: 14px;">
+      按价格由高到低排列 · 阻力（上方）/ 支撑（下方）一目了然
+    </div>
+    <div class="price-ladder" id="price-ladder"></div>
+  </div>
+
+  <div class="section">
+    <h2>股债联合因子背景</h2>
+    <div class="stock-bond">
+      <div class="stock-bond-grid">
+        <div class="stock-bond-item">
+          <div class="l">上证综指</div>
+          <div class="v">3476.88</div>
+          <div class="s">日涨跌 —</div>
+        </div>
+        <div class="stock-bond-item">
+          <div class="l">近 5 日涨跌</div>
+          <div class="v" style="color: var(--green);">-2.82%</div>
+          <div class="s">近 20 日 -4.78%</div>
+        </div>
+        <div class="stock-bond-item">
+          <div class="l">20 日相关系数</div>
+          <div class="v">+0.202</div>
+          <div class="s">60 日 +0.119</div>
+        </div>
+        <div class="stock-bond-item">
+          <div class="l">联合信号</div>
+          <div class="v">-0.569</div>
+          <div class="s">+0.202 × -2.82%</div>
+        </div>
+      </div>
+      <div class="stock-bond-conclude">
+        <strong>四象限判断</strong>：正相关＋股跌 → 债跌预期　|　
+        <strong>概率调整</strong>：-1.5%（月度）  -0.8%（季度）
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="warn">
+      ⚠ <strong>纯技术预测，不含基本面。</strong>历史相似样本 = 179 个，置信度较高。本报告由 TL 量化择时模型 v3.3-FINAL 自动生成，不构成投资建议。
+    </div>
+    <div class="brand-footer">
+      <strong>中泰证券固定收益研究</strong> · 联系人：<strong>吕品 / 苏鸿婷</strong>
+    </div>
+    <div>TL 量化择时模型 · v3.3-FINAL · 每日报告</div>
+    <!-- BRANDING_PATCH_MARK: 左下 slogan -->
+    <div class="brand-watermark-bl">诚实 · 工匠 · 品味</div>
+  </div>
+
+</div>
+<script>
+const DATA = {"factor_groups": [{"name": "A 动量外推因子", "score": -6.4, "max_score": 29.0, "score_change": -2.1, "prev_score": -4.3, "items": [{"name": "MACD", "detail": "DIF=0.01037  DEA=0.08201  柱=-0.14328", "judge": "死叉+绿柱伸长 ✓", "score": -12.0, "max_score": 12.0}, {"name": "RSI(14)", "detail": "35.74  ↓", "judge": "负区间↓ ✗", "score": -10.0, "max_score": 10.0}, {"name": "ROC(10)", "detail": "-0.340%", "judge": "负向动量 ✗ (-0.340%)", "score": -7.0, "max_score": 7.0}]}, {"name": "B 均值回归因子", "score": 0.0, "max_score": 21.0, "score_change": 0.0, "prev_score": 0.0, "items": [{"name": "Stoch", "detail": "K=41.9  D=51.6", "judge": "死叉/未超卖 ✗", "score": -8.0, "max_score": 8.0}, {"name": "CCI(20)", "detail": "-83.9", "judge": "负区间 ✗ (-83.9)", "score": -5.0, "max_score": 5.0}, {"name": "布林中轨", "detail": "收盘=117.160  中轨=117.620  昨收=117.300", "judge": "中轨下方·继续下跌 ✗", "score": -8.0, "max_score": 8.0}]}, {"name": "C 趋势结构因子", "score": -3.5, "max_score": 30.0, "score_change": -10.7, "prev_score": 7.2, "items": [{"name": "均线排列", "detail": "MA快线=117.542 / MA慢线=117.620 / MA趋势线=117.005", "judge": "缠绕无序", "score": 0.0, "max_score": 15.0}, {"name": "布林带宽", "detail": "", "judge": "扩张中 ✓ (0.0173 > 均值0.0162)", "score": 5.0, "max_score": 5.0}, {"name": "布林突破", "detail": "上轨=118.635  下轨=116.605", "judge": "轨道内部 →", "score": 0.0, "max_score": 10.0}]}, {"name": "D 持仓资金因子", "score": -14.2, "max_score": 20.0, "score_change": -1.4, "prev_score": -12.8, "items": [{"name": "持仓量", "detail": "OI=182696  变化=+51.25%", "judge": "OI增+价跌=空头入场 ✗", "score": -12.0, "max_score": 12.0}, {"name": "成交量", "detail": "142464（20日均量136022）", "judge": "量能正常下跌 (1.05×均量)", "score": 0.0, "max_score": 8.0}]}, {"name": "E 股债联合因子", "score": -0.9, "max_score": 15.0, "score_change": 0.1, "prev_score": -1.0, "items": [{"name": "综合结论", "detail": "弱空信号   （联合值 = -0.57）", "judge": "弱空信号   （联合值 = -0.57）", "score": -3.0, "max_score": 15.0}]}], "monthly": {"label": "月度", "rows": [{"method": "①动量外推", "weight": 42, "target": 115.198, "pct": -1.67, "note": "动量综合强度 -1.34"}, {"method": "②均值回归", "weight": 28, "target": 117.372, "pct": 0.18, "note": "回归中枢 117.374 · 半衰期 3.0日"}, {"method": "③历史形态", "weight": 30, "target": 117.798, "pct": 0.54, "note": "179 个相似样本"}], "total_target": 116.579, "total_pct": -0.5, "total_note": "综合加权 → 中性", "atr_range": "113.171 ~ 119.986", "hist_range": "116.104 ~ 119.075", "up_prob": "58.5%"}, "quarterly": {"label": "季度", "rows": [{"method": "①动量外推", "weight": 42, "target": 111.273, "pct": -5.02, "note": "动量综合强度 -1.34"}, {"method": "②均值回归", "weight": 28, "target": 117.374, "pct": 0.18, "note": "回归中枢 117.374 · 半衰期 3.0日"}, {"method": "③历史形态", "weight": 30, "target": 118.566, "pct": 1.2, "note": "179 个相似样本"}], "total_target": 115.148, "total_pct": -1.72, "total_note": "综合加权 → 中性", "atr_range": "109.245 ~ 121.050", "hist_range": "114.842 ~ 121.185", "up_prob": "58.3%"}, "price_ladder": [{"name": "季度ATR上轨", "price": 121.05, "diff": 3.32, "tag": "阻力", "kind": "resistance"}, {"name": "月度ATR上轨", "price": 119.986, "diff": 2.41, "tag": "阻力", "kind": "resistance"}, {"name": "布林上轨", "price": 118.635, "diff": 1.26, "tag": "阻力", "kind": "resistance"}, {"name": "黄金 78.6%", "price": 118.403, "diff": 1.06, "tag": "黄金", "kind": "resistance"}, {"name": "黄金 61.8%", "price": 118.028, "diff": 0.74, "tag": "黄金", "kind": "resistance"}, {"name": "黄金 50.0%", "price": 117.765, "diff": 0.52, "tag": "黄金", "kind": "resistance"}, {"name": "MA20均线", "price": 117.62, "diff": 0.39, "tag": "支撑", "kind": "resistance"}, {"name": "黄金 38.2%", "price": 117.502, "diff": 0.29, "tag": "黄金", "kind": "resistance"}, {"name": "均值回归中枢", "price": 117.374, "diff": 0.18, "tag": "均值", "kind": "resistance"}, {"name": "黄金 23.6%", "price": 117.176, "diff": 0.01, "tag": "黄金", "kind": "resistance"}, {"name": "当前价格", "price": 117.16, "diff": 0.0, "tag": "基准", "kind": "current"}, {"name": "布林下轨", "price": 116.605, "diff": -0.47, "tag": "支撑", "kind": "support"}, {"name": "MA100均线", "price": 116.39, "diff": -0.66, "tag": "支撑", "kind": "support"}, {"name": "动量月度目标", "price": 115.198, "diff": -1.67, "tag": "参考", "kind": "support"}, {"name": "月度ATR下轨", "price": 113.171, "diff": -3.4, "tag": "支撑", "kind": "support"}, {"name": "季度ATR下轨", "price": 109.245, "diff": -6.76, "tag": "支撑", "kind": "support"}]};
+
+function renderFactorGroups() {
+  const container = document.getElementById('factor-groups');
+  DATA.factor_groups.forEach((grp, idx) => {
+    const ratio = grp.max_score > 0 ? (grp.score / grp.max_score) : 0;
+    const absPct = Math.min(Math.abs(ratio) * 100, 100);
+    const scoreClass = grp.score > 0.1 ? 'pos' : (grp.score < -0.1 ? 'neg' : 'neutral');
+    const fillHtml = grp.score > 0
+      ? `<div class="fill pos" style="width: ${absPct/2}%;"></div>`
+      : (grp.score < 0 ? `<div class="fill neg" style="width: ${absPct/2}%;"></div>` : '');
+    const itemsHtml = grp.items.map(it => {
+      const itClass = it.score > 0 ? 'pos' : (it.score < 0 ? 'neg' : 'zero');
+      const sign = it.score > 0 ? '+' : '';
+      return `
+        <div class="factor-row">
+          <div class="fname">${it.name}</div>
+          <div class="fdetail">${it.detail}</div>
+          <div class="fjudge">${it.judge}</div>
+          <div class="fscore ${itClass}">${sign}${it.score} / ${it.max_score}</div>
+        </div>`;
+    }).join('');
+    const groupEl = document.createElement('div');
+    groupEl.className = 'factor-group';
+    const scoreSign = grp.score > 0 ? '+' : '';
+    groupEl.innerHTML = `
+      <div class="factor-group-header">
+        <span class="caret">▶</span>
+        <span class="name">${grp.name}</span>
+        <div class="score-bar"><div class="track"><div class="midline"></div>${fillHtml}</div></div>
+        <span class="score-value ${scoreClass}">${scoreSign}${grp.score.toFixed(1)} / ${grp.max_score}${
+          grp.prev_score !== null && grp.prev_score !== undefined
+            ? ` <span class="delta ${grp.score_change > 0 ? 'up' : grp.score_change < 0 ? 'down' : 'flat'}">${grp.score_change > 0 ? '▲' : grp.score_change < 0 ? '▼' : '─'} ${Math.abs(grp.score_change).toFixed(1)}</span>`
+            : ''
+        }</span>
+      </div>
+      <div class="factor-details"><div class="factor-details-inner">${itemsHtml}</div></div>`;
+    container.appendChild(groupEl);
+    groupEl.querySelector('.factor-group-header').addEventListener('click', () => {
+      groupEl.classList.toggle('open');
+    });
+    if (idx === 0) groupEl.classList.add('open');
+  });
+}
+
+function renderForecast(period) {
+  const data = DATA[period];
+  if (!data) return;
+  const tbody = document.getElementById('forecast-body');
+  const rowsHtml = data.rows.map(r => `
+    <tr>
+      <td style="font-weight: 500;">${r.method}</td>
+      <td><div class="weight-cell"><span>${r.weight}%</span><div class="weight-bar"><div class="fill" style="width: ${r.weight}%;"></div></div></div></td>
+      <td style="font-weight: 600;">${r.target.toFixed(3)}</td>
+      <td class="${r.pct >= 0 ? 'pct-pos' : 'pct-neg'}">${r.pct > 0 ? '+' : ''}${r.pct.toFixed(2)}%</td>
+      <td style="color: var(--neutral-500); font-size: 12px;">${r.note || ''}</td>
+    </tr>`).join('');
+  const totalSign = data.total_pct > 0 ? '+' : '';
+  tbody.innerHTML = rowsHtml + `
+    <tr class="total">
+      <td>★ 综合加权</td>
+      <td>100%</td>
+      <td style="font-size: 15px;">${data.total_target.toFixed(3)}</td>
+      <td class="${data.total_pct >= 0 ? 'pct-pos' : 'pct-neg'}" style="font-size: 14px;">${totalSign}${data.total_pct.toFixed(2)}%</td>
+      <td>${data.total_note || ''}</td>
+    </tr>`;
+  document.getElementById('period-label').textContent = data.label;
+  document.getElementById('atr-range').textContent = data.atr_range;
+  document.getElementById('hist-range').textContent = data.hist_range;
+  document.getElementById('up-prob').textContent = data.up_prob;
+}
+
+function renderPriceLadder() {
+  const container = document.getElementById('price-ladder');
+  const PIVOT_THRESHOLD = 0.3;  // ±0.3% 视为中枢
+
+  // 分组
+  const resistance = [];
+  const pivot = [];
+  const support = [];
+  DATA.price_ladder.forEach(p => {
+    if (p.kind === 'current') {
+      pivot.push(p);
+    } else if (Math.abs(p.diff) <= PIVOT_THRESHOLD) {
+      pivot.push(p);
+    } else if (p.diff > 0) {
+      resistance.push(p);
+    } else {
+      support.push(p);
+    }
+  });
+
+  // 每组内按价格从高到低排
+  const byPriceDesc = (a, b) => b.price - a.price;
+  resistance.sort(byPriceDesc);
+  pivot.sort(byPriceDesc);
+  support.sort(byPriceDesc);
+
+  // 渲染一行
+  function row(p) {
+    const arrow = p.kind === 'current' ? '●' : (p.diff > 0 ? '▲' : '▼');
+    const diffClass = p.diff > 0 ? 'pos' : (p.diff < 0 ? 'neg' : '');
+    const sign = p.diff > 0 ? '+' : '';
+    // 黄金分割位 tag 加额外类名
+    const tagClass = p.tag === '黄金' ? 'tag gold' : 'tag';
+    return `
+      <div class="ladder-item ${p.kind}">
+        <span class="arrow">${arrow}</span>
+        <span class="name">${p.name}</span>
+        <span class="price">${p.price.toFixed(3)}</span>
+        <span class="diff ${diffClass}">${sign}${p.diff.toFixed(2)}%</span>
+        <span class="${tagClass}">${p.tag}</span>
+      </div>`;
+  }
+
+  const sections = [];
+  if (resistance.length) {
+    sections.push(`<div class="ladder-group-title">阻力区 · 上方 ${resistance.length} 档</div>`);
+    sections.push(resistance.map(row).join(''));
+  }
+  if (pivot.length) {
+    sections.push(`<div class="ladder-group-title pivot">中枢区 · ±${PIVOT_THRESHOLD}% 内 ${pivot.length} 档</div>`);
+    sections.push(pivot.map(row).join(''));
+  }
+  if (support.length) {
+    sections.push(`<div class="ladder-group-title">支撑区 · 下方 ${support.length} 档</div>`);
+    sections.push(support.map(row).join(''));
+  }
+  container.innerHTML = sections.join('');
+}
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    renderForecast(tab.dataset.tab);
+  });
+});
+
+renderFactorGroups();
+renderForecast('monthly');
+renderPriceLadder();
+</script>
+<script>document.addEventListener('DOMContentLoaded',()=>{
+const group=[...document.querySelectorAll('.factor-group')].find(e=>e.textContent.includes('D 持仓资金'));
+if(group){const note=document.createElement('div');note.className='roll-context';
+note.style.cssText='font-size:13px;line-height:1.6;padding:6px 14px;color:#546171;background:#f4f6f8';
+note.textContent="TL2612持仓-5,846手，远月合计+4,357手；远月增仓抵消近月减仓74.5%；全合约净变动-1,489手（-0.66%）。 日线全合约持仓试算-13.5；正式评分不变。";group.appendChild(note);}});</script><script>document.addEventListener('DOMContentLoaded',()=>{
+      document.querySelectorAll('.factor-group').forEach(group=>{
+        group.classList.add('open');const h=group.querySelector('.factor-group-header');h.setAttribute('role','button');h.tabIndex=0;h.setAttribute('aria-expanded','true');
+        h.addEventListener('click',()=>h.setAttribute('aria-expanded',String(group.classList.contains('open'))));
+        h.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();h.click();}});
+      });
+      document.querySelectorAll('.tab').forEach(tab=>{tab.setAttribute('role','button');tab.tabIndex=0;tab.setAttribute('aria-pressed',String(tab.classList.contains('active')));
+        tab.addEventListener('click',()=>document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-pressed',String(t.classList.contains('active')))));
+        tab.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();tab.click();}});
+      });
+    });</script><script>const FLOW_DATA = {"as_of":"2026-11-26","days":[{"date":"2026-11-20","contract":"TL2703","summary":{"vol":87216.0,"oi":18782.0,"buy":46140.0,"sell":41076.0,"bs_ratio":1.1232836692959391,"px0":118.05,"px1":117.89,"多开":22489.0,"空开":22465.0,"双开":6813.0,"多平":10697.0,"空平":12699.0,"双平":1752.0,"多换":5936.0,"空换":4365.0,"开仓量":51767.0,"平仓量":25148.0,"换手量":10301.0,"开仓净多":24.0,"平仓净多":-2002.0},"series":[{"time":"09:30","price":118.06,"volume":240,"oi":134,"open_net":240,"open_cumulative":240,"oi_cumulative":134},{"time":"09:35","price":118.05,"volume":7343,"oi":2462,"open_net":-771,"open_cumulative":-531,"oi_cumulative":2596},{"time":"09:40","price":118.06,"volume":4067,"oi":684,"open_net":131,"open_cumulative":-400,"oi_cumulative":3280},{"time":"09:45","price":118.13,"volume":4369,"oi":1186,"open_net":663,"open_cumulative":263,"oi_cumulative":4466},{"time":"09:50","price":118.09,"volume":3113,"oi":569,"open_net":112,"open_cumulative":375,"oi_cumulative":5035},{"time":"09:55","price":118.05,"volume":1275,"oi":166,"open_net":18,"open_cumulative":393,"oi_cumulative":5201},{"time":"10:00","price":118.03,"volume":1758,"oi":525,"open_net":-260,"open_cumulative":133,"oi_cumulative":5726},{"time":"10:05","price":118.1,"volume":2585,"oi":299,"open_net":294,"open_cumulative":427,"oi_cumulative":6025},{"time":"10:10","price":118.12,"volume":1441,"oi":299,"open_net":133,"open_cumulative":560,"oi_cumulative":6324},{"time":"10:15","price":118.09,"volume":1218,"oi":556,"open_net":-72,"open_cumulative":488,"oi_cumulative":6880},{"time":"10:20","price":118.19,"volume":2638,"oi":511,"open_net":157,"open_cumulative":645,"oi_cumulative":7391},{"time":"10:25","price":118.17,"volume":2128,"oi":555,"open_net":46,"open_cumulative":691,"oi_cumulative":7946},{"time":"10:30","price":118.18,"volume":1174,"oi":412,"open_net":40,"open_cumulative":731,"oi_cumulative":8358},{"time":"10:35","price":118.13,"volume":1523,"oi":704,"open_net":-389,"open_cumulative":342,"oi_cumulative":9062},{"time":"10:40","price":118.07,"volume":2327,"oi":539,"open_net":-234,"open_cumulative":108,"oi_cumulative":9601},{"time":"10:45","price":118.11,"volume":2214,"oi":647,"open_net":-13,"open_cumulative":95,"oi_cumulative":10248},{"time":"10:50","price":118.11,"volume":1156,"oi":216,"open_net":-56,"open_cumulative":39,"oi_cumulative":10464},{"time":"10:55","price":118.03,"volume":1910,"oi":-147,"open_net":-65,"open_cumulative":-26,"oi_cumulative":10317},{"time":"11:00","price":118.07,"volume":2226,"oi":491,"open_net":510,"open_cumulative":484,"oi_cumulative":10808},{"time":"11:05","price":118.06,"volume":1104,"oi":154,"open_net":-278,"open_cumulative":206,"oi_cumulative":10962},{"time":"11:10","price":118.07,"volume":1086,"oi":241,"open_net":36,"open_cumulative":242,"oi_cumulative":11203},{"time":"11:15","price":118.04,"volume":844,"oi":177,"open_net":-94,"open_cumulative":148,"oi_cumulative":11380},{"time":"11:20","price":118.09,"volume":1304,"oi":-57,"open_net":-71,"open_cumulative":77,"oi_cumulative":11323},{"time":"11:25","price":118.04,"volume":1098,"oi":261,"open_net":88,"open_cumulative":165,"oi_cumulative":11584},{"time":"11:30","price":118.06,"volume":1154,"oi":33,"open_net":4,"open_cumulative":169,"oi_cumulative":11617},{"time":"13:00","price":118.04,"volume":30,"oi":27,"open_net":-25,"open_cumulative":144,"oi_cumulative":11644},{"time":"13:05","price":117.99,"volume":1612,"oi":1,"open_net":-138,"open_cumulative":6,"oi_cumulative":11645},{"time":"13:10","price":117.93,"volume":1695,"oi":-13,"open_net":-105,"open_cumulative":-99,"oi_cumulative":11632},{"time":"13:15","price":117.96,"volume":1418,"oi":-117,"open_net":31,"open_cumulative":-68,"oi_cumulative":11515},{"time":"13:20","price":118.03,"volume":1246,"oi":255,"open_net":46,"open_cumulative":-22,"oi_cumulative":11770},{"time":"13:25","price":117.99,"volume":1328,"oi":439,"open_net":-249,"open_cumulative":-271,"oi_cumulative":12209},{"time":"13:30","price":117.96,"volume":1013,"oi":231,"open_net":-84,"open_cumulative":-355,"oi_cumulative":12440},{"time":"13:35","price":117.93,"volume":875,"oi":137,"open_net":-53,"open_cumulative":-408,"oi_cumulative":12577},{"time":"13:40","price":117.84,"volume":1817,"oi":133,"open_net":-393,"open_cumulative":-801,"oi_cumulative":12710},{"time":"13:45","price":117.83,"volume":3084,"oi":101,"open_net":238,"open_cumulative":-563,"oi_cumulative":12811},{"time":"13:50","price":117.89,"volume":1549,"oi":190,"open_net":177,"open_cumulative":-386,"oi_cumulative":13001},{"time":"13:55","price":117.92,"volume":1528,"oi":289,"open_net":77,"open_cumulative":-309,"oi_cumulative":13290},{"time":"14:00","price":117.96,"volume":1305,"oi":369,"open_net":-31,"open_cumulative":-340,"oi_cumulative":13659},{"time":"14:05","price":117.92,"volume":1217,"oi":445,"open_net":-94,"open_cumulative":-434,"oi_cumulative":14104},{"time":"14:10","price":117.99,"volume":1582,"oi":365,"open_net":426,"open_cumulative":-8,"oi_cumulative":14469},{"time":"14:15","price":117.95,"volume":1384,"oi":380,"open_net":14,"open_cumulative":6,"oi_cumulative":14849},{"time":"14:20","price":117.94,"volume":880,"oi":329,"open_net":-155,"open_cumulative":-149,"oi_cumulative":15178},{"time":"14:25","price":117.97,"volume":1203,"oi":360,"open_net":122,"open_cumulative":-27,"oi_cumulative":15538},{"time":"14:30","price":117.93,"volume":974,"oi":409,"open_net":-99,"open_cumulative":-126,"oi_cumulative":15947},{"time":"14:35","price":117.95,"volume":1542,"oi":665,"open_net":200,"open_cumulative":74,"oi_cumulative":16612},{"time":"14:40","price":117.95,"volume":1205,"oi":549,"open_net":197,"open_cumulative":271,"oi_cumulative":17161},{"time":"14:45","price":117.94,"volume":1311,"oi":589,"open_net":-16,"open_cumulative":255,"oi_cumulative":17750},{"time":"14:50","price":117.97,"volume":1201,"oi":413,"open_net":-40,"open_cumulative":215,"oi_cumulative":18163},{"time":"14:55","price":117.95,"volume":695,"oi":400,"open_net":-36,"open_cumulative":179,"oi_cumulative":18563},{"time":"15:00","price":117.94,"volume":828,"oi":245,"open_net":-80,"open_cumulative":99,"oi_cumulative":18808},{"time":"15:05","price":117.92,"volume":1024,"oi":144,"open_net":16,"open_cumulative":115,"oi_cumulative":18952},{"time":"15:10","price":117.93,"volume":802,"oi":-92,"open_net":3,"open_cumulative":118,"oi_cumulative":18860},{"time":"15:15","price":117.89,"volume":1573,"oi":-78,"open_net":-94,"open_cumulative":24,"oi_cumulative":18782}],"segments":[{"name":"早盘","vol":51295.0,"oi":11617.0,"buy":28020.0,"sell":23275.0,"bs_ratio":1.2038668098818475,"px0":118.05,"px1":118.06,"多开":14096.0,"空开":13927.0,"双开":3220.0,"多平":5836.0,"空平":7986.0,"双平":830.0,"多换":3308.0,"空换":2092.0,"开仓量":31243.0,"平仓量":14652.0,"换手量":5400.0,"开仓净多":169.0,"平仓净多":-2150.0},{"name":"午后","vol":18496.0,"oi":2042.0,"buy":8662.0,"sell":9834.0,"bs_ratio":0.880821639210901,"px0":118.04,"px1":117.96,"多开":3957.0,"空开":4466.0,"双开":1088.0,"多平":3235.0,"空平":2672.0,"双平":536.0,"多换":1175.0,"空换":1367.0,"开仓量":9511.0,"平仓量":6443.0,"换手量":2542.0,"开仓净多":-509.0,"平仓净多":563.0},{"name":"尾盘","vol":17425.0,"oi":5123.0,"buy":9458.0,"sell":7967.0,"bs_ratio":1.1871469812978537,"px0":117.96,"px1":117.89,"多开":4436.0,"空开":4072.0,"双开":2505.0,"多平":1626.0,"空平":2041.0,"双平":386.0,"多换":1453.0,"空换":906.0,"开仓量":11013.0,"平仓量":4053.0,"换手量":2359.0,"开仓净多":364.0,"平仓净多":-415.0},{"name":"最后30分钟","vol":6137.0,"oi":1039.0,"buy":3260.0,"sell":2877.0,"bs_ratio":1.1331247827598192,"px0":117.94,"px1":117.89,"多开":1115.0,"空开":1338.0,"双开":823.0,"多平":710.0,"空平":1025.0,"双平":225.0,"多换":580.0,"空换":321.0,"开仓量":3276.0,"平仓量":1960.0,"换手量":901.0,"开仓净多":-223.0,"平仓净多":-315.0}],"bands":[{"name":"高位带","lo":118.07,"hi":118.21,"vol":32269.0,"oi":8230.0,"share":36.99894514767932},{"name":"中位带","lo":117.93,"hi":118.06,"vol":41298.0,"oi":8958.0,"share":47.35140341221794},{"name":"低位带","lo":117.79,"hi":117.92,"vol":13649.0,"oi":1594.0,"share":15.649651440102733}],"snapshot_count":13592,"validation":{"volume":true,"same_contract_oi":true,"close":true},"snapshot_high":118.21,"daily_high":118.21},{"date":"2026-11-23","contract":"TL2703","summary":{"vol":110404.0,"oi":15232.0,"buy":56966.0,"sell":53438.0,"bs_ratio":1.0660204348965157,"px0":118.01,"px1":117.61,"多开":27396.0,"空开":28014.0,"双开":5629.0,"多平":17062.0,"空平":18305.0,"双平":2054.0,"多换":6467.0,"空换":5477.0,"开仓量":61039.0,"平仓量":37421.0,"换手量":11944.0,"开仓净多":-618.0,"平仓净多":-1243.0},"series":[{"time":"09:30","price":118.06,"volume":105,"oi":-1,"open_net":-51,"open_cumulative":-51,"oi_cumulative":-1},{"time":"09:35","price":117.9,"volume":8665,"oi":1906,"open_net":9,"open_cumulative":-42,"oi_cumulative":1905},{"time":"09:40","price":117.88,"volume":3286,"oi":272,"open_net":571,"open_cumulative":529,"oi_cumulative":2177},{"time":"09:45","price":117.83,"volume":2929,"oi":416,"open_net":230,"open_cumulative":759,"oi_cumulative":2593},{"time":"09:50","price":117.86,"volume":2331,"oi":664,"open_net":-121,"open_cumulative":638,"oi_cumulative":3257},{"time":"09:55","price":117.87,"volume":1770,"oi":189,"open_net":134,"open_cumulative":772,"oi_cumulative":3446},{"time":"10:00","price":117.89,"volume":1762,"oi":342,"open_net":452,"open_cumulative":1224,"oi_cumulative":3788},{"time":"10:05","price":117.89,"volume":2365,"oi":599,"open_net":-305,"open_cumulative":919,"oi_cumulative":4387},{"time":"10:10","price":117.92,"volume":1673,"oi":445,"open_net":85,"open_cumulative":1004,"oi_cumulative":4832},{"time":"10:15","price":117.93,"volume":1608,"oi":332,"open_net":-69,"open_cumulative":935,"oi_cumulative":5164},{"time":"10:20","price":117.94,"volume":1658,"oi":341,"open_net":-23,"open_cumulative":912,"oi_cumulative":5505},{"time":"10:25","price":117.99,"volume":2251,"oi":-132,"open_net":195,"open_cumulative":1107,"oi_cumulative":5373},{"time":"10:30","price":117.92,"volume":1559,"oi":145,"open_net":-122,"open_cumulative":985,"oi_cumulative":5518},{"time":"10:35","price":117.95,"volume":1474,"oi":109,"open_net":38,"open_cumulative":1023,"oi_cumulative":5627},{"time":"10:40","price":117.93,"volume":1303,"oi":92,"open_net":-186,"open_cumulative":837,"oi_cumulative":5719},{"time":"10:45","price":117.9,"volume":2462,"oi":1,"open_net":106,"open_cumulative":943,"oi_cumulative":5720},{"time":"10:50","price":117.91,"volume":1146,"oi":212,"open_net":203,"open_cumulative":1146,"oi_cumulative":5932},{"time":"10:55","price":117.87,"volume":1986,"oi":360,"open_net":207,"open_cumulative":1353,"oi_cumulative":6292},{"time":"11:00","price":117.87,"volume":1695,"oi":94,"open_net":56,"open_cumulative":1409,"oi_cumulative":6386},{"time":"11:05","price":117.83,"volume":1477,"oi":214,"open_net":-13,"open_cumulative":1396,"oi_cumulative":6600},{"time":"11:10","price":117.77,"volume":2705,"oi":497,"open_net":-299,"open_cumulative":1097,"oi_cumulative":7097},{"time":"11:15","price":117.86,"volume":3604,"oi":1260,"open_net":823,"open_cumulative":1920,"oi_cumulative":8357},{"time":"11:20","price":117.84,"volume":1976,"oi":497,"open_net":42,"open_cumulative":1962,"oi_cumulative":8854},{"time":"11:25","price":117.74,"volume":2719,"oi":-55,"open_net":-367,"open_cumulative":1595,"oi_cumulative":8799},{"time":"11:30","price":117.73,"volume":3159,"oi":437,"open_net":309,"open_cumulative":1904,"oi_cumulative":9236},{"time":"13:00","price":117.76,"volume":40,"oi":10,"open_net":40,"open_cumulative":1944,"oi_cumulative":9246},{"time":"13:05","price":117.75,"volume":1531,"oi":156,"open_net":-152,"open_cumulative":1792,"oi_cumulative":9402},{"time":"13:10","price":117.75,"volume":1672,"oi":394,"open_net":-158,"open_cumulative":1634,"oi_cumulative":9796},{"time":"13:15","price":117.79,"volume":979,"oi":261,"open_net":80,"open_cumulative":1714,"oi_cumulative":10057},{"time":"13:20","price":117.75,"volume":1073,"oi":354,"open_net":-186,"open_cumulative":1528,"oi_cumulative":10411},{"time":"13:25","price":117.62,"volume":3379,"oi":696,"open_net":-405,"open_cumulative":1123,"oi_cumulative":11107},{"time":"13:30","price":117.54,"volume":4474,"oi":-1,"open_net":-536,"open_cumulative":587,"oi_cumulative":11106},{"time":"13:35","price":117.56,"volume":2498,"oi":52,"open_net":-112,"open_cumulative":475,"oi_cumulative":11158},{"time":"13:40","price":117.57,"volume":2169,"oi":281,"open_net":-104,"open_cumulative":371,"oi_cumulative":11439},{"time":"13:45","price":117.52,"volume":1703,"oi":392,"open_net":-447,"open_cumulative":-76,"oi_cumulative":11831},{"time":"13:50","price":117.47,"volume":2949,"oi":319,"open_net":-247,"open_cumulative":-323,"oi_cumulative":12150},{"time":"13:55","price":117.47,"volume":3582,"oi":139,"open_net":-296,"open_cumulative":-619,"oi_cumulative":12289},{"time":"14:00","price":117.5,"volume":2674,"oi":510,"open_net":24,"open_cumulative":-595,"oi_cumulative":12799},{"time":"14:05","price":117.51,"volume":1901,"oi":-173,"open_net":-84,"open_cumulative":-679,"oi_cumulative":12626},{"time":"14:10","price":117.53,"volume":1520,"oi":39,"open_net":-63,"open_cumulative":-742,"oi_cumulative":12665},{"time":"14:15","price":117.57,"volume":2661,"oi":199,"open_net":262,"open_cumulative":-480,"oi_cumulative":12864},{"time":"14:20","price":117.6,"volume":1596,"oi":-35,"open_net":-5,"open_cumulative":-485,"oi_cumulative":12829},{"time":"14:25","price":117.63,"volume":2500,"oi":509,"open_net":452,"open_cumulative":-33,"oi_cumulative":13338},{"time":"14:30","price":117.59,"volume":2121,"oi":453,"open_net":39,"open_cumulative":6,"oi_cumulative":13791},{"time":"14:35","price":117.64,"volume":2088,"oi":480,"open_net":97,"open_cumulative":103,"oi_cumulative":14271},{"time":"14:40","price":117.62,"volume":1845,"oi":293,"open_net":1,"open_cumulative":104,"oi_cumulative":14564},{"time":"14:45","price":117.63,"volume":1200,"oi":223,"open_net":-216,"open_cumulative":-112,"oi_cumulative":14787},{"time":"14:50","price":117.6,"volume":1373,"oi":222,"open_net":-214,"open_cumulative":-326,"oi_cumulative":15009},{"time":"14:55","price":117.6,"volume":876,"oi":186,"open_net":-69,"open_cumulative":-395,"oi_cumulative":15195},{"time":"15:00","price":117.64,"volume":992,"oi":67,"open_net":77,"open_cumulative":-318,"oi_cumulative":15262},{"time":"15:05","price":117.6,"volume":1185,"oi":212,"open_net":-137,"open_cumulative":-455,"oi_cumulative":15474},{"time":"15:10","price":117.6,"volume":957,"oi":-94,"open_net":-30,"open_cumulative":-485,"oi_cumulative":15380},{"time":"15:15","price":117.61,"volume":1198,"oi":-148,"open_net":-133,"open_cumulative":-618,"oi_cumulative":15232}],"segments":[{"name":"早盘","vol":57668.0,"oi":9236.0,"buy":31180.0,"sell":26488.0,"bs_ratio":1.1771368166717004,"px0":118.01,"px1":117.73,"多开":16287.0,"空开":14383.0,"双开":2556.0,"多平":8338.0,"空平":8969.0,"双平":1058.0,"多换":3589.0,"空换":2488.0,"开仓量":33226.0,"平仓量":18365.0,"换手量":6077.0,"开仓净多":1904.0,"平仓净多":-631.0},{"name":"午后","vol":28718.0,"oi":3560.0,"buy":12965.0,"sell":15753.0,"bs_ratio":0.8230178378721513,"px0":117.76,"px1":117.5,"多开":5593.0,"空开":8097.0,"双开":1527.0,"多平":5041.0,"空平":4980.0,"双平":580.0,"多换":1329.0,"空换":1571.0,"开仓量":15217.0,"平仓量":10601.0,"换手量":2900.0,"开仓净多":-2504.0,"平仓净多":61.0},{"name":"尾盘","vol":24018.0,"oi":2436.0,"buy":12821.0,"sell":11197.0,"bs_ratio":1.1450388496918817,"px0":117.5,"px1":117.61,"多开":5516.0,"空开":5534.0,"双开":1546.0,"多平":3683.0,"空平":4356.0,"双平":416.0,"多换":1549.0,"空换":1418.0,"开仓量":12596.0,"平仓量":8455.0,"换手量":2967.0,"开仓净多":-18.0,"平仓净多":-673.0},{"name":"最后30分钟","vol":6581.0,"oi":445.0,"buy":3338.0,"sell":3243.0,"bs_ratio":1.0292938637064446,"px0":117.63,"px1":117.61,"多开":1111.0,"空开":1617.0,"双开":451.0,"多平":933.0,"空平":1309.0,"双平":169.0,"多换":489.0,"空换":502.0,"开仓量":3179.0,"平仓量":2411.0,"换手量":991.0,"开仓净多":-506.0,"平仓净多":-376.0}],"bands":[{"name":"高位带","lo":117.86,"hi":118.06,"vol":39185.0,"oi":5845.0,"share":35.49237346472954},{"name":"中位带","lo":117.65,"hi":117.85,"vol":26946.0,"oi":5417.0,"share":24.406724394043692},{"name":"低位带","lo":117.44,"hi":117.64,"vol":44273.0,"oi":3970.0,"share":40.10090214122677}],"snapshot_count":13434,"validation":{"volume":true,"same_contract_oi":true,"close":true},"snapshot_high":118.06,"daily_high":118.08},{"date":"2026-11-24","contract":"TL2703","summary":{"vol":134256.0,"oi":17831.0,"buy":72387.0,"sell":61869.0,"bs_ratio":1.1700043640595452,"px0":117.4,"px1":117.75,"多开":38108.0,"空开":34243.0,"双开":4832.0,"多平":20783.0,"空平":23678.0,"双平":1951.0,"多换":6346.0,"空换":4315.0,"开仓量":77183.0,"平仓量":46412.0,"换手量":10661.0,"开仓净多":3865.0,"平仓净多":-2895.0},"series":[{"time":"09:30","price":117.33,"volume":311,"oi":113,"open_net":-311,"open_cumulative":-311,"oi_cumulative":113},{"time":"09:35","price":117.35,"volume":11036,"oi":2398,"open_net":1300,"open_cumulative":989,"oi_cumulative":2511},{"time":"09:40","price":117.52,"volume":7055,"oi":951,"open_net":313,"open_cumulative":1302,"oi_cumulative":3462},{"time":"09:45","price":117.57,"volume":6705,"oi":673,"open_net":452,"open_cumulative":1754,"oi_cumulative":4135},{"time":"09:50","price":117.64,"volume":6114,"oi":768,"open_net":54,"open_cumulative":1808,"oi_cumulative":4903},{"time":"09:55","price":117.72,"volume":4883,"oi":658,"open_net":633,"open_cumulative":2441,"oi_cumulative":5561},{"time":"10:00","price":117.68,"volume":4045,"oi":796,"open_net":-192,"open_cumulative":2249,"oi_cumulative":6357},{"time":"10:05","price":117.65,"volume":3556,"oi":458,"open_net":-462,"open_cumulative":1787,"oi_cumulative":6815},{"time":"10:10","price":117.62,"volume":3112,"oi":479,"open_net":-538,"open_cumulative":1249,"oi_cumulative":7294},{"time":"10:15","price":117.64,"volume":2530,"oi":343,"open_net":-50,"open_cumulative":1199,"oi_cumulative":7637},{"time":"10:20","price":117.61,"volume":2547,"oi":308,"open_net":-482,"open_cumulative":717,"oi_cumulative":7945},{"time":"10:25","price":117.59,"volume":2358,"oi":453,"open_net":-22,"open_cumulative":695,"oi_cumulative":8398},{"time":"10:30","price":117.65,"volume":2540,"oi":231,"open_net":306,"open_cumulative":1001,"oi_cumulative":8629},{"time":"10:35","price":117.62,"volume":3045,"oi":470,"open_net":111,"open_cumulative":1112,"oi_cumulative":9099},{"time":"10:40","price":117.61,"volume":1166,"oi":227,"open_net":-40,"open_cumulative":1072,"oi_cumulative":9326},{"time":"10:45","price":117.62,"volume":2207,"oi":244,"open_net":19,"open_cumulative":1091,"oi_cumulative":9570},{"time":"10:50","price":117.69,"volume":2981,"oi":664,"open_net":420,"open_cumulative":1511,"oi_cumulative":10234},{"time":"10:55","price":117.71,"volume":2815,"oi":626,"open_net":452,"open_cumulative":1963,"oi_cumulative":10860},{"time":"11:00","price":117.67,"volume":2088,"oi":246,"open_net":31,"open_cumulative":1994,"oi_cumulative":11106},{"time":"11:05","price":117.68,"volume":1408,"oi":122,"open_net":-24,"open_cumulative":1970,"oi_cumulative":11228},{"time":"11:10","price":117.69,"volume":1457,"oi":310,"open_net":-27,"open_cumulative":1943,"oi_cumulative":11538},{"time":"11:15","price":117.74,"volume":2073,"oi":211,"open_net":297,"open_cumulative":2240,"oi_cumulative":11749},{"time":"11:20","price":117.76,"volume":2195,"oi":175,"open_net":132,"open_cumulative":2372,"oi_cumulative":11924},{"time":"11:25","price":117.76,"volume":1778,"oi":426,"open_net":14,"open_cumulative":2386,"oi_cumulative":12350},{"time":"11:30","price":117.69,"volume":2366,"oi":-5,"open_net":121,"open_cumulative":2507,"oi_cumulative":12345},{"time":"13:00","price":117.68,"volume":14,"oi":-2,"open_net":0,"open_cumulative":2507,"oi_cumulative":12343},{"time":"13:05","price":117.72,"volume":1936,"oi":371,"open_net":70,"open_cumulative":2577,"oi_cumulative":12714},{"time":"13:10","price":117.73,"volume":2279,"oi":373,"open_net":314,"open_cumulative":2891,"oi_cumulative":13087},{"time":"13:15","price":117.68,"volume":1498,"oi":145,"open_net":15,"open_cumulative":2906,"oi_cumulative":13232},{"time":"13:20","price":117.68,"volume":2430,"oi":207,"open_net":92,"open_cumulative":2998,"oi_cumulative":13439},{"time":"13:25","price":117.69,"volume":983,"oi":129,"open_net":48,"open_cumulative":3046,"oi_cumulative":13568},{"time":"13:30","price":117.77,"volume":2355,"oi":253,"open_net":387,"open_cumulative":3433,"oi_cumulative":13821},{"time":"13:35","price":117.77,"volume":2654,"oi":191,"open_net":111,"open_cumulative":3544,"oi_cumulative":14012},{"time":"13:40","price":117.82,"volume":3786,"oi":738,"open_net":896,"open_cumulative":4440,"oi_cumulative":14750},{"time":"13:45","price":117.83,"volume":2409,"oi":450,"open_net":30,"open_cumulative":4470,"oi_cumulative":15200},{"time":"13:50","price":117.79,"volume":2259,"oi":136,"open_net":21,"open_cumulative":4491,"oi_cumulative":15336},{"time":"13:55","price":117.79,"volume":1936,"oi":102,"open_net":-252,"open_cumulative":4239,"oi_cumulative":15438},{"time":"14:00","price":117.81,"volume":1545,"oi":90,"open_net":98,"open_cumulative":4337,"oi_cumulative":15528},{"time":"14:05","price":117.79,"volume":1554,"oi":203,"open_net":-159,"open_cumulative":4178,"oi_cumulative":15731},{"time":"14:10","price":117.79,"volume":1689,"oi":192,"open_net":42,"open_cumulative":4220,"oi_cumulative":15923},{"time":"14:15","price":117.78,"volume":2083,"oi":-24,"open_net":-92,"open_cumulative":4128,"oi_cumulative":15899},{"time":"14:20","price":117.77,"volume":1619,"oi":152,"open_net":-61,"open_cumulative":4067,"oi_cumulative":16051},{"time":"14:25","price":117.77,"volume":1079,"oi":74,"open_net":-196,"open_cumulative":3871,"oi_cumulative":16125},{"time":"14:30","price":117.81,"volume":1255,"oi":375,"open_net":227,"open_cumulative":4098,"oi_cumulative":16500},{"time":"14:35","price":117.78,"volume":1729,"oi":115,"open_net":-158,"open_cumulative":3940,"oi_cumulative":16615},{"time":"14:40","price":117.79,"volume":1002,"oi":-147,"open_net":3,"open_cumulative":3943,"oi_cumulative":16468},{"time":"14:45","price":117.77,"volume":1417,"oi":80,"open_net":-342,"open_cumulative":3601,"oi_cumulative":16548},{"time":"14:50","price":117.76,"volume":1581,"oi":17,"open_net":1,"open_cumulative":3602,"oi_cumulative":16565},{"time":"14:55","price":117.78,"volume":2627,"oi":370,"open_net":37,"open_cumulative":3639,"oi_cumulative":16935},{"time":"15:00","price":117.77,"volume":1327,"oi":330,"open_net":-57,"open_cumulative":3582,"oi_cumulative":17265},{"time":"15:05","price":117.71,"volume":1977,"oi":331,"open_net":-99,"open_cumulative":3483,"oi_cumulative":17596},{"time":"15:10","price":117.66,"volume":2461,"oi":107,"open_net":-114,"open_cumulative":3369,"oi_cumulative":17703},{"time":"15:15","price":117.75,"volume":2401,"oi":128,"open_net":496,"open_cumulative":3865,"oi_cumulative":17831}],"segments":[{"name":"早盘","vol":82371.0,"oi":12345.0,"buy":44152.0,"sell":38219.0,"bs_ratio":1.1552369240430151,"px0":117.4,"px1":117.69,"多开":24468.0,"空开":21961.0,"双开":2616.0,"多平":12623.0,"空平":14046.0,"双平":792.0,"多换":3434.0,"空换":2431.0,"开仓量":49045.0,"平仓量":27461.0,"换手量":5865.0,"开仓净多":2507.0,"平仓净多":-1423.0},{"name":"午后","vol":26083.0,"oi":3182.0,"buy":14668.0,"sell":11415.0,"bs_ratio":1.2849759088918091,"px0":117.68,"px1":117.81,"多开":7658.0,"空开":5828.0,"双开":1065.0,"多平":4236.0,"空平":4613.0,"双平":429.0,"多换":1441.0,"空换":813.0,"开仓量":14551.0,"平仓量":9278.0,"换手量":2254.0,"开仓净多":1830.0,"平仓净多":-377.0},{"name":"尾盘","vol":25802.0,"oi":2304.0,"buy":13567.0,"sell":12235.0,"bs_ratio":1.1088680016346546,"px0":117.81,"px1":117.75,"多开":5982.0,"空开":6454.0,"双开":1151.0,"多平":3924.0,"空平":5019.0,"双平":730.0,"多换":1471.0,"空换":1071.0,"开仓量":13587.0,"平仓量":9673.0,"换手量":2542.0,"开仓净多":-472.0,"平仓净多":-1095.0},{"name":"最后30分钟","vol":12392.0,"oi":1281.0,"buy":6549.0,"sell":5843.0,"bs_ratio":1.1208283416053397,"px0":117.77,"px1":117.75,"多开":3174.0,"空开":2910.0,"双开":610.0,"多平":1931.0,"空平":2191.0,"双平":297.0,"多换":672.0,"空换":607.0,"开仓量":6694.0,"平仓量":4419.0,"换手量":1279.0,"开仓净多":264.0,"平仓净多":-260.0}],"bands":[{"name":"高位带","lo":117.67,"hi":117.85,"vol":73934.0,"oi":9342.0,"share":55.06941961625551},{"name":"中位带","lo":117.49,"hi":117.66,"vol":45107.0,"oi":5315.0,"share":33.59775354546538},{"name":"低位带","lo":117.31,"hi":117.48,"vol":15215.0,"oi":3174.0,"share":11.332826838279109}],"snapshot_count":13278,"validation":{"volume":true,"same_contract_oi":true,"close":true},"snapshot_high":117.85,"daily_high":117.85},{"date":"2026-11-25","contract":"TL2703","summary":{"vol":154920.0,"oi":6253.0,"buy":72473.0,"sell":82447.0,"bs_ratio":0.8790253132315305,"px0":117.78,"px1":117.3,"多开":30345.0,"空开":40691.0,"双开":4348.0,"多平":30136.0,"空平":32007.0,"双平":3778.0,"多换":6390.0,"空换":7225.0,"开仓量":75384.0,"平仓量":65921.0,"换手量":13615.0,"开仓净多":-10346.0,"平仓净多":-1871.0},"series":[{"time":"09:30","price":117.84,"volume":246,"oi":-31,"open_net":127,"open_cumulative":127,"oi_cumulative":-31},{"time":"09:35","price":117.75,"volume":10273,"oi":357,"open_net":-936,"open_cumulative":-809,"oi_cumulative":326},{"time":"09:40","price":117.69,"volume":4877,"oi":638,"open_net":-904,"open_cumulative":-1713,"oi_cumulative":964},{"time":"09:45","price":117.66,"volume":3568,"oi":-366,"open_net":-170,"open_cumulative":-1883,"oi_cumulative":598},{"time":"09:50","price":117.56,"volume":6280,"oi":-240,"open_net":-116,"open_cumulative":-1999,"oi_cumulative":358},{"time":"09:55","price":117.58,"volume":4609,"oi":351,"open_net":158,"open_cumulative":-1841,"oi_cumulative":709},{"time":"10:00","price":117.63,"volume":3501,"oi":51,"open_net":43,"open_cumulative":-1798,"oi_cumulative":760},{"time":"10:05","price":117.51,"volume":3370,"oi":315,"open_net":-667,"open_cumulative":-2465,"oi_cumulative":1075},{"time":"10:10","price":117.55,"volume":2313,"oi":240,"open_net":-92,"open_cumulative":-2557,"oi_cumulative":1315},{"time":"10:15","price":117.55,"volume":2315,"oi":-99,"open_net":51,"open_cumulative":-2506,"oi_cumulative":1216},{"time":"10:20","price":117.56,"volume":1745,"oi":-15,"open_net":217,"open_cumulative":-2289,"oi_cumulative":1201},{"time":"10:25","price":117.54,"volume":1563,"oi":-120,"open_net":199,"open_cumulative":-2090,"oi_cumulative":1081},{"time":"10:30","price":117.57,"volume":1509,"oi":44,"open_net":-22,"open_cumulative":-2112,"oi_cumulative":1125},{"time":"10:35","price":117.62,"volume":2078,"oi":243,"open_net":308,"open_cumulative":-1804,"oi_cumulative":1368},{"time":"10:40","price":117.71,"volume":3574,"oi":-18,"open_net":270,"open_cumulative":-1534,"oi_cumulative":1350},{"time":"10:45","price":117.65,"volume":2311,"oi":-52,"open_net":-283,"open_cumulative":-1817,"oi_cumulative":1298},{"time":"10:50","price":117.67,"volume":2157,"oi":0,"open_net":34,"open_cumulative":-1783,"oi_cumulative":1298},{"time":"10:55","price":117.67,"volume":1369,"oi":-68,"open_net":-62,"open_cumulative":-1845,"oi_cumulative":1230},{"time":"11:00","price":117.63,"volume":1496,"oi":63,"open_net":-206,"open_cumulative":-2051,"oi_cumulative":1293},{"time":"11:05","price":117.64,"volume":1067,"oi":1,"open_net":22,"open_cumulative":-2029,"oi_cumulative":1294},{"time":"11:10","price":117.64,"volume":1418,"oi":-25,"open_net":-147,"open_cumulative":-2176,"oi_cumulative":1269},{"time":"11:15","price":117.6,"volume":1918,"oi":-292,"open_net":-80,"open_cumulative":-2256,"oi_cumulative":977},{"time":"11:20","price":117.63,"volume":1290,"oi":-204,"open_net":53,"open_cumulative":-2203,"oi_cumulative":773},{"time":"11:25","price":117.59,"volume":948,"oi":-141,"open_net":-70,"open_cumulative":-2273,"oi_cumulative":632},{"time":"11:30","price":117.57,"volume":2107,"oi":-150,"open_net":-434,"open_cumulative":-2707,"oi_cumulative":482},{"time":"13:05","price":117.55,"volume":1547,"oi":-56,"open_net":-117,"open_cumulative":-2824,"oi_cumulative":426},{"time":"13:10","price":117.54,"volume":698,"oi":-42,"open_net":-60,"open_cumulative":-2884,"oi_cumulative":384},{"time":"13:15","price":117.59,"volume":1995,"oi":50,"open_net":337,"open_cumulative":-2547,"oi_cumulative":434},{"time":"13:20","price":117.59,"volume":1434,"oi":120,"open_net":149,"open_cumulative":-2398,"oi_cumulative":554},{"time":"13:25","price":117.56,"volume":1475,"oi":90,"open_net":-41,"open_cumulative":-2439,"oi_cumulative":644},{"time":"13:30","price":117.53,"volume":1214,"oi":80,"open_net":-208,"open_cumulative":-2647,"oi_cumulative":724},{"time":"13:35","price":117.44,"volume":5113,"oi":331,"open_net":-900,"open_cumulative":-3547,"oi_cumulative":1055},{"time":"13:40","price":117.36,"volume":4168,"oi":216,"open_net":-794,"open_cumulative":-4341,"oi_cumulative":1271},{"time":"13:45","price":117.38,"volume":2353,"oi":5,"open_net":-168,"open_cumulative":-4509,"oi_cumulative":1276},{"time":"13:50","price":117.4,"volume":3105,"oi":258,"open_net":-418,"open_cumulative":-4927,"oi_cumulative":1534},{"time":"13:55","price":117.37,"volume":2351,"oi":117,"open_net":-301,"open_cumulative":-5228,"oi_cumulative":1651},{"time":"14:00","price":117.3,"volume":3842,"oi":120,"open_net":-667,"open_cumulative":-5895,"oi_cumulative":1771},{"time":"14:05","price":117.34,"volume":3593,"oi":14,"open_net":-152,"open_cumulative":-6047,"oi_cumulative":1785},{"time":"14:10","price":117.36,"volume":3346,"oi":-71,"open_net":-344,"open_cumulative":-6391,"oi_cumulative":1714},{"time":"14:15","price":117.35,"volume":2421,"oi":285,"open_net":-163,"open_cumulative":-6554,"oi_cumulative":1999},{"time":"14:20","price":117.38,"volume":2724,"oi":-77,"open_net":-164,"open_cumulative":-6718,"oi_cumulative":1922},{"time":"14:25","price":117.34,"volume":2095,"oi":-6,"open_net":-483,"open_cumulative":-7201,"oi_cumulative":1916},{"time":"14:30","price":117.43,"volume":2492,"oi":35,"open_net":96,"open_cumulative":-7105,"oi_cumulative":1951},{"time":"14:35","price":117.34,"volume":2077,"oi":270,"open_net":-173,"open_cumulative":-7278,"oi_cumulative":2221},{"time":"14:40","price":117.21,"volume":6033,"oi":1028,"open_net":-1486,"open_cumulative":-8764,"oi_cumulative":3249},{"time":"14:45","price":117.2,"volume":5181,"oi":858,"open_net":13,"open_cumulative":-8751,"oi_cumulative":4107},{"time":"14:50","price":117.11,"volume":6536,"oi":869,"open_net":-1076,"open_cumulative":-9827,"oi_cumulative":4976},{"time":"14:55","price":117.13,"volume":5197,"oi":287,"open_net":-565,"open_cumulative":-10392,"oi_cumulative":5263},{"time":"15:00","price":117.16,"volume":4601,"oi":411,"open_net":286,"open_cumulative":-10106,"oi_cumulative":5674},{"time":"15:05","price":117.11,"volume":2795,"oi":153,"open_net":-338,"open_cumulative":-10444,"oi_cumulative":5827},{"time":"15:10","price":117.32,"volume":4126,"oi":407,"open_net":215,"open_cumulative":-10229,"oi_cumulative":6234},{"time":"15:15","price":117.3,"volume":4506,"oi":19,"open_net":-117,"open_cumulative":-10346,"oi_cumulative":6253}],"segments":[{"name":"早盘","vol":67902.0,"oi":482.0,"buy":33369.0,"sell":34533.0,"bs_ratio":0.9662931109373643,"px0":117.78,"px1":117.57,"多开":13323.0,"空开":16030.0,"双开":1581.0,"多平":14333.0,"空平":15465.0,"双平":1592.0,"多换":2852.0,"空换":2726.0,"开仓量":30934.0,"平仓量":31390.0,"换手量":5578.0,"开仓净多":-2707.0,"平仓净多":-1132.0},{"name":"午后","vol":29169.0,"oi":1279.0,"buy":12516.0,"sell":16653.0,"bs_ratio":0.7515762925598991,"px0":117.56,"px1":117.31,"多开":5230.0,"空开":8293.0,"双开":866.0,"多平":5491.0,"空平":5388.0,"双平":977.0,"多换":1262.0,"空换":1662.0,"开仓量":14389.0,"平仓量":11856.0,"换手量":2924.0,"开仓净多":-3063.0,"平仓净多":103.0},{"name":"尾盘","vol":57849.0,"oi":4492.0,"buy":26588.0,"sell":31261.0,"bs_ratio":0.850516618150411,"px0":117.31,"px1":117.3,"多开":11792.0,"空开":16368.0,"双开":1901.0,"多平":10312.0,"空平":11154.0,"双平":1209.0,"多换":2276.0,"空换":2837.0,"开仓量":30061.0,"平仓量":22675.0,"换手量":5113.0,"开仓净多":-4576.0,"平仓净多":-842.0},{"name":"最后30分钟","vol":27765.0,"oi":2149.0,"buy":13599.0,"sell":14166.0,"bs_ratio":0.9599745870393901,"px0":117.2,"px1":117.3,"多开":6232.0,"空开":7831.0,"双开":728.0,"多平":4608.0,"空平":5414.0,"双平":661.0,"多换":1176.0,"空换":1115.0,"开仓量":14791.0,"平仓量":10683.0,"换手量":2291.0,"开仓净多":-1599.0,"平仓净多":-806.0}],"bands":[{"name":"高位带","lo":117.59,"hi":117.84,"vol":50889.0,"oi":38.0,"share":32.84856700232378},{"name":"中位带","lo":117.34,"hi":117.58,"vol":57253.0,"oi":1834.0,"share":36.9564936741544},{"name":"低位带","lo":117.08,"hi":117.33,"vol":46778.0,"oi":4381.0,"share":30.19493932352182}],"snapshot_count":15709,"validation":{"volume":true,"same_contract_oi":true,"close":true},"snapshot_high":117.84,"daily_high":117.86},{"date":"2026-11-26","contract":"TL2703","summary":{"vol":142464.0,"oi":3805.0,"buy":73018.0,"sell":69446.0,"bs_ratio":1.0514356478414884,"px0":117.2,"px1":117.16,"多开":32884.0,"空开":31992.0,"双开":3624.0,"多平":27694.0,"空平":29508.0,"双平":4082.0,"多换":6440.0,"空换":6240.0,"开仓量":68500.0,"平仓量":61284.0,"换手量":12680.0,"开仓净多":892.0,"平仓净多":-1814.0},"series":[{"time":"09:30","price":117.15,"volume":248,"oi":70,"open_net":-24,"open_cumulative":-24,"oi_cumulative":70},{"time":"09:35","price":117.25,"volume":7655,"oi":666,"open_net":258,"open_cumulative":234,"oi_cumulative":736},{"time":"09:40","price":117.19,"volume":3004,"oi":-133,"open_net":-47,"open_cumulative":187,"oi_cumulative":603},{"time":"09:45","price":117.19,"volume":2308,"oi":494,"open_net":-237,"open_cumulative":-50,"oi_cumulative":1097},{"time":"09:50","price":117.16,"volume":5230,"oi":499,"open_net":-1159,"open_cumulative":-1209,"oi_cumulative":1596},{"time":"09:55","price":117.09,"volume":3110,"oi":320,"open_net":-324,"open_cumulative":-1533,"oi_cumulative":1916},{"time":"10:00","price":117.12,"volume":4367,"oi":822,"open_net":-358,"open_cumulative":-1891,"oi_cumulative":2738},{"time":"10:05","price":117.1,"volume":3232,"oi":348,"open_net":-644,"open_cumulative":-2535,"oi_cumulative":3086},{"time":"10:10","price":117.06,"volume":1806,"oi":-4,"open_net":-129,"open_cumulative":-2664,"oi_cumulative":3082},{"time":"10:15","price":116.98,"volume":4387,"oi":74,"open_net":-575,"open_cumulative":-3239,"oi_cumulative":3156},{"time":"10:20","price":116.9,"volume":6069,"oi":600,"open_net":216,"open_cumulative":-3023,"oi_cumulative":3756},{"time":"10:25","price":116.78,"volume":5163,"oi":-207,"open_net":-353,"open_cumulative":-3376,"oi_cumulative":3549},{"time":"10:30","price":116.78,"volume":7454,"oi":497,"open_net":-710,"open_cumulative":-4086,"oi_cumulative":4046},{"time":"10:35","price":116.86,"volume":4190,"oi":121,"open_net":484,"open_cumulative":-3602,"oi_cumulative":4167},{"time":"10:40","price":116.82,"volume":2870,"oi":187,"open_net":-19,"open_cumulative":-3621,"oi_cumulative":4354},{"time":"10:45","price":116.8,"volume":2696,"oi":-118,"open_net":323,"open_cumulative":-3298,"oi_cumulative":4236},{"time":"10:50","price":116.92,"volume":3825,"oi":-524,"open_net":589,"open_cumulative":-2709,"oi_cumulative":3712},{"time":"10:55","price":116.9,"volume":2255,"oi":-14,"open_net":-289,"open_cumulative":-2998,"oi_cumulative":3698},{"time":"11:00","price":116.87,"volume":2154,"oi":145,"open_net":-323,"open_cumulative":-3321,"oi_cumulative":3843},{"time":"11:05","price":116.9,"volume":2825,"oi":224,"open_net":8,"open_cumulative":-3313,"oi_cumulative":4067},{"time":"11:10","price":116.84,"volume":2076,"oi":54,"open_net":-25,"open_cumulative":-3338,"oi_cumulative":4121},{"time":"11:15","price":116.83,"volume":1451,"oi":135,"open_net":-192,"open_cumulative":-3530,"oi_cumulative":4256},{"time":"11:20","price":116.91,"volume":2036,"oi":-137,"open_net":120,"open_cumulative":-3410,"oi_cumulative":4119},{"time":"11:25","price":116.93,"volume":1685,"oi":101,"open_net":39,"open_cumulative":-3371,"oi_cumulative":4220},{"time":"11:30","price":116.92,"volume":1722,"oi":-206,"open_net":-81,"open_cumulative":-3452,"oi_cumulative":4014},{"time":"13:00","price":116.97,"volume":326,"oi":151,"open_net":326,"open_cumulative":-3126,"oi_cumulative":4165},{"time":"13:05","price":116.98,"volume":3568,"oi":-249,"open_net":402,"open_cumulative":-2724,"oi_cumulative":3916},{"time":"13:10","price":117.04,"volume":3088,"oi":-122,"open_net":194,"open_cumulative":-2530,"oi_cumulative":3794},{"time":"13:15","price":117.12,"volume":2839,"oi":64,"open_net":639,"open_cumulative":-1891,"oi_cumulative":3858},{"time":"13:20","price":117.16,"volume":3313,"oi":-218,"open_net":231,"open_cumulative":-1660,"oi_cumulative":3640},{"time":"13:25","price":117.26,"volume":6169,"oi":289,"open_net":1457,"open_cumulative":-203,"oi_cumulative":3929},{"time":"13:30","price":117.3,"volume":4526,"oi":607,"open_net":195,"open_cumulative":-8,"oi_cumulative":4536},{"time":"13:35","price":117.26,"volume":3287,"oi":235,"open_net":217,"open_cumulative":209,"oi_cumulative":4771},{"time":"13:40","price":117.26,"volume":1953,"oi":-138,"open_net":90,"open_cumulative":299,"oi_cumulative":4633},{"time":"13:45","price":117.22,"volume":2085,"oi":73,"open_net":147,"open_cumulative":446,"oi_cumulative":4706},{"time":"13:50","price":117.15,"volume":2797,"oi":-111,"open_net":-383,"open_cumulative":63,"oi_cumulative":4595},{"time":"13:55","price":117.13,"volume":2065,"oi":-139,"open_net":-62,"open_cumulative":1,"oi_cumulative":4456},{"time":"14:00","price":117.21,"volume":1838,"oi":11,"open_net":337,"open_cumulative":338,"oi_cumulative":4467},{"time":"14:05","price":117.17,"volume":1062,"oi":-67,"open_net":53,"open_cumulative":391,"oi_cumulative":4400},{"time":"14:10","price":117.2,"volume":1086,"oi":43,"open_net":139,"open_cumulative":530,"oi_cumulative":4443},{"time":"14:15","price":117.19,"volume":559,"oi":-9,"open_net":-14,"open_cumulative":516,"oi_cumulative":4434},{"time":"14:20","price":117.16,"volume":1000,"oi":2,"open_net":-215,"open_cumulative":301,"oi_cumulative":4436},{"time":"14:25","price":117.12,"volume":1113,"oi":-73,"open_net":-24,"open_cumulative":277,"oi_cumulative":4363},{"time":"14:30","price":117.17,"volume":1902,"oi":219,"open_net":1,"open_cumulative":278,"oi_cumulative":4582},{"time":"14:35","price":117.15,"volume":1038,"oi":-29,"open_net":-70,"open_cumulative":208,"oi_cumulative":4553},{"time":"14:40","price":117.2,"volume":1485,"oi":-13,"open_net":226,"open_cumulative":434,"oi_cumulative":4540},{"time":"14:45","price":117.3,"volume":2716,"oi":142,"open_net":217,"open_cumulative":651,"oi_cumulative":4682},{"time":"14:50","price":117.21,"volume":2386,"oi":18,"open_net":-49,"open_cumulative":602,"oi_cumulative":4700},{"time":"14:55","price":117.22,"volume":1509,"oi":-192,"open_net":261,"open_cumulative":863,"oi_cumulative":4508},{"time":"15:00","price":117.24,"volume":1121,"oi":-185,"open_net":66,"open_cumulative":929,"oi_cumulative":4323},{"time":"15:05","price":117.25,"volume":1291,"oi":-69,"open_net":169,"open_cumulative":1098,"oi_cumulative":4254},{"time":"15:10","price":117.2,"volume":769,"oi":-132,"open_net":-1,"open_cumulative":1097,"oi_cumulative":4122},{"time":"15:15","price":117.16,"volume":1755,"oi":-317,"open_net":-205,"open_cumulative":892,"oi_cumulative":3805}],"segments":[{"name":"早盘","vol":83818.0,"oi":4014.0,"buy":41043.0,"sell":42775.0,"bs_ratio":0.9595090590298071,"px0":117.2,"px1":116.92,"多开":18342.0,"空开":21794.0,"双开":2080.0,"多平":15649.0,"空平":17396.0,"双平":1879.0,"多换":3128.0,"空换":3550.0,"开仓量":42216.0,"平仓量":34924.0,"换手量":6678.0,"开仓净多":-3452.0,"平仓净多":-1747.0},{"name":"午后","vol":37852.0,"oi":454.0,"buy":21857.0,"sell":15995.0,"bs_ratio":1.366489527977493,"px0":116.96,"px1":117.21,"多开":10343.0,"空开":6553.0,"双开":901.0,"多平":7069.0,"空平":8333.0,"双平":1050.0,"多换":2097.0,"空换":1506.0,"开仓量":17797.0,"平仓量":16452.0,"换手量":3603.0,"开仓净多":3790.0,"平仓净多":-1264.0},{"name":"尾盘","vol":20794.0,"oi":-663.0,"buy":10118.0,"sell":10676.0,"bs_ratio":0.9477332334207569,"px0":117.21,"px1":117.16,"多开":4199.0,"空开":3645.0,"双开":643.0,"多平":4976.0,"空平":3779.0,"双平":1153.0,"多换":1215.0,"空换":1184.0,"开仓量":8487.0,"平仓量":9908.0,"换手量":2399.0,"开仓净多":554.0,"平仓净多":1197.0},{"name":"最后30分钟","vol":8840.0,"oi":-873.0,"buy":4007.0,"sell":4833.0,"bs_ratio":0.8290916614938961,"px0":117.3,"px1":117.16,"多开":1612.0,"空开":1363.0,"双开":254.0,"多平":2520.0,"空平":1480.0,"双平":624.0,"多换":421.0,"空换":566.0,"开仓量":3229.0,"平仓量":4624.0,"换手量":987.0,"开仓净多":249.0,"平仓净多":1040.0}],"bands":[{"name":"高位带","lo":117.12,"hi":117.34,"vol":70732.0,"oi":1832.0,"share":49.64903414195867},{"name":"中位带","lo":116.9,"hi":117.11,"vol":35785.0,"oi":1090.0,"share":25.118626460017968},{"name":"低位带","lo":116.68,"hi":116.89,"vol":35947.0,"oi":883.0,"share":25.232339398023363}],"snapshot_count":14198,"validation":{"volume":true,"same_contract_oi":true,"close":true},"snapshot_high":117.34,"daily_high":117.34}],"kind_order":["多开","空开","双开","多平","空平","双平","多换","空换"],"source":"同花顺 iFinD THS_Snapshot","method":"成交方向和开平性质由快照推导，属于描述性跟踪。净增仓按同一合约前收持仓核对；换月期间不等同于全品种资金流入。"};
+(() => {
+  const data=FLOW_DATA, days=data.days, root=document.getElementById('daily-flow');
+  let selected=days.length-1, point=-1;
+  const n=(v,d=0)=>Number(v).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+  const signed=v=>(v>0?'+':'')+n(v);
+  const cls=v=>v>0?'positive':v<0?'negative':'';
+  const esc=v=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const colors=['#267f6a','#aa4852','#b6c1cf','#ce9e68','#79ada4','#d1d9e3','#8c9bad','#d9dfe7'];
+  const week=['日','一','二','三','四','五','六'];
+  document.getElementById('flow-dates').innerHTML=days.map((d,i)=>`<button class="flow-date" type="button" data-flow-index="${i}" aria-pressed="${i===selected}" aria-label="查看${d.date}分时单流">${d.date.slice(5).replace('-','/')}<small>${i===days.length-1?'最新':'周'+week[new Date(d.date+'T12:00:00').getDay()]}</small></button>`).join('');
+  root.querySelectorAll('.flow-date').forEach(b=>b.addEventListener('click',()=>{selected=Number(b.dataset.flowIndex);point=-1;render();}));
+  function drawChart(){
+    const d=days[selected],s=d.series,host=document.getElementById('flow-chart');
+    const w=Math.max(280,Math.round(host.getBoundingClientRect().width)),h=335,L=w<500?45:57,R=18,x=i=>L+i*(w-L-R)/(s.length-1);
+    const pp=s.map(r=>r.price),nn=s.map(r=>r.open_cumulative);
+    let pmin=Math.min(...pp),pmax=Math.max(...pp),pad=Math.max((pmax-pmin)*.15,.025);pmin-=pad;pmax+=pad;
+    let nmin=Math.min(0,...nn),nmax=Math.max(0,...nn),np=Math.max((nmax-nmin)*.12,1);nmin-=np;nmax+=np;
+    const py=v=>52+(pmax-v)/(pmax-pmin)*112,ny=v=>220+(nmax-v)/(nmax-nmin)*77;
+    const poly=(key,y)=>s.map((r,i)=>(i?'L':'M')+x(i).toFixed(1)+','+y(r[key]).toFixed(1)).join(' ');
+    const ppath=poly('price',py),npath=poly('open_cumulative',ny);
+    const ticks=vals=>[...new Set(vals)];const tickIndex=ticks([0,Math.round((s.length-1)*.25),s.findIndex(r=>r.time>='13:00'),Math.round((s.length-1)*.75),s.length-1]).filter(i=>i>=0);
+    let svg=`<svg viewBox="0 0 ${w} ${h}" role="img" tabindex="0" aria-label="${d.date}日内价格及累计开仓净多，左右方向键查看五分钟数据"><text x="${L}" y="30" fill="#7d8795" font-size="10">价格（5分钟末价）</text><text x="${L}" y="202" fill="#7d8795" font-size="10">累计开仓净多（手）</text>`;
+    for(const v of [pmax,(pmax+pmin)/2,pmin]) svg+=`<line x1="${L}" x2="${w-R}" y1="${py(v)}" y2="${py(v)}" stroke="#edf0f4"/><text x="${L-8}" y="${py(v)+3}" text-anchor="end" font-size="9" fill="#8a95a3">${v.toFixed(2)}</text>`;
+    for(const v of [nmin,0,nmax]){
+      svg+=`<line x1="${L}" x2="${w-R}" y1="${ny(v)}" y2="${ny(v)}" stroke="${v===0?'#cbd2dc':'#f0f2f5'}" stroke-dasharray="${v===0?'3 3':'0'}"/>`;
+      if(v===0||Math.abs(ny(v)-ny(0))>14)svg+=`<text x="${L-8}" y="${ny(v)+3}" text-anchor="end" font-size="9" fill="#8a95a3">${Math.abs(v)>=1000?(v/1000).toFixed(1)+'k':n(v)}</text>`;
+    }
+    svg+=`<path d="${ppath}" fill="none" stroke="#485f7d" stroke-width="2" stroke-linejoin="round"/><path d="M${x(0)},${ny(0)} ${npath.replace(/^M/,'L')} L${x(s.length-1)},${ny(0)} Z" fill="${d.summary['开仓净多']>=0?'#eef6f3':'#fbf0f1'}"/><path d="${npath}" fill="none" stroke="${d.summary['开仓净多']>=0?'#398d78':'#ac525c'}" stroke-width="1.8" stroke-linejoin="round"/>`;
+    const midday=s.findIndex(r=>r.time>='13:00');
+    if(midday>0)svg+=`<line x1="${x(midday)-2}" x2="${x(midday)-2}" y1="45" y2="302" stroke="#d8dfe8" stroke-dasharray="2 4"/><text x="${x(midday)+4}" y="42" font-size="9" fill="#9aa3af">午后</text>`;
+    tickIndex.forEach(i=>svg+=`<text x="${x(i)}" y="320" text-anchor="middle" font-size="9" fill="#8a95a3">${s[i].time}</text>`);
+    svg+='<g id="flow-cursor" pointer-events="none"><line id="flow-cursor-line" y1="45" y2="303" stroke="#77869a" stroke-dasharray="3 3"/><circle id="flow-price-dot" r="3.2" fill="#485f7d" stroke="white" stroke-width="1.4"/><circle id="flow-net-dot" r="3.2" fill="#a34e58" stroke="white" stroke-width="1.4"/></g></svg>';
+    host.innerHTML=svg;
+    function show(i){point=Math.max(0,Math.min(s.length-1,i));const r=s[point];const xx=x(point);
+      const line=document.getElementById('flow-cursor-line');line.setAttribute('x1',xx);line.setAttribute('x2',xx);
+      const pd=document.getElementById('flow-price-dot');pd.setAttribute('cx',xx);pd.setAttribute('cy',py(r.price));
+      const nd=document.getElementById('flow-net-dot');nd.setAttribute('cx',xx);nd.setAttribute('cy',ny(r.open_cumulative));
+      document.getElementById('flow-readout').innerHTML=`<span><strong>${r.time}</strong> · 价格 <strong>${n(r.price,2)}</strong></span><span>累计开仓净多 <strong>${signed(r.open_cumulative)}</strong></span><span>本时段成交 ${n(r.volume)} · 净增仓 ${signed(r.oi)}</span>`;
+    }
+    const el=host.querySelector('svg');el.addEventListener('pointermove',e=>{const rect=el.getBoundingClientRect();show(Math.round(((e.clientX-rect.left)*w/rect.width-L)/(w-L-R)*(s.length-1)));});
+    el.addEventListener('pointerdown',e=>{const rect=el.getBoundingClientRect();show(Math.round(((e.clientX-rect.left)*w/rect.width-L)/(w-L-R)*(s.length-1)));});
+    el.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();show(e.key==='Home'?0:e.key==='End'?s.length-1:point+(e.key==='ArrowRight'?1:-1));}});
+    show(point<0?s.length-1:point);
+  }
+  function render(){
+    const d=days[selected],s=d.summary;root.dataset.selectedDate=d.date;
+    root.querySelectorAll('.flow-date').forEach((b,i)=>b.setAttribute('aria-pressed',String(i===selected)));
+    document.getElementById('flow-status').innerHTML=`<strong>${d.date}</strong><span class="flow-contract">${esc(d.contract)}</span><span class="flow-check">成交量、同合约持仓变化均已核对</span>`;
+    const opening=s['开仓净多'];
+    const openingHint=Math.abs(opening)<s.vol*.001?'多开 − 空开 · 近乎平衡':opening>0?'多开 − 空开 · 多开较多':'多开 − 空开 · 空开较多';
+    const metrics=[['开仓净多（手）',signed(opening),opening,openingHint],['净增仓',signed(s.oi),s.oi,'手 · 主力合约'],['主动买卖比',n(s.bs_ratio,2),0,`买 ${n(s.buy)} / 卖 ${n(s.sell)}`],['总成交',n(s.vol),0,'手 · 全天成交']];
+    document.getElementById('flow-kpis').innerHTML=metrics.map(m=>`<div class="flow-kpi"><div class="label">${m[0]}</div><strong class="${cls(m[2])}">${m[1]}</strong><small>${m[3]}</small></div>`).join('');
+    document.getElementById('flow-stack').innerHTML=data.kind_order.map((k,i)=>`<span style="width:${s[k]/s.vol*100}%;background:${colors[i]}" title="${k} ${n(s[k])}手"></span>`).join('');
+    document.getElementById('flow-kinds').innerHTML=data.kind_order.map((k,i)=>`<div class="flow-kind"><i style="background:${colors[i]}"></i><span>${k}</span><b>${n(s[k])}</b><em>${n(s[k]/s.vol*100,1)}%</em></div>`).join('');
+    document.getElementById('flow-close-note').textContent=`平仓净多 ${signed(s['平仓净多'])} 手（多平 − 空平）；八类成交合计覆盖全天。`;
+    const bandMax=Math.max(...d.bands.map(b=>Math.abs(b.oi)),1);
+    document.getElementById('flow-bands').innerHTML=d.bands.map(b=>`<div class="flow-band"><div class="flow-band-heading"><span>${b.name}<small>${n(b.lo,2)}–${n(b.hi,2)}</small></span><strong class="flow-${cls(b.oi)}">${signed(b.oi)}</strong></div><div class="flow-band-track"><span class="${cls(b.oi)}" style="width:${Math.abs(b.oi)/bandMax*100}%"></span></div></div>`).join('');
+    document.getElementById('flow-period-body').innerHTML=d.segments.map(r=>`<tr><td>${r.name}</td><td data-label="成交">${n(r.vol)}</td><td data-label="净增仓">${signed(r.oi)}</td><td data-label="买卖比">${n(r.bs_ratio,2)}</td><td data-label="开仓净多" class="flow-${cls(r['开仓净多'])}">${signed(r['开仓净多'])}</td><td data-label="价格">${n(r.px0,2)} → ${n(r.px1,2)}</td></tr>`).join('');
+    const mismatch=Math.abs(d.daily_high-d.snapshot_high)>.00001;
+    document.getElementById('flow-source-note').textContent=mismatch?`本日快照可见高点${n(d.snapshot_high,2)}，日线高点${n(d.daily_high,2)}，保留各源原值。`:'';
+    drawChart();
+  }
+  let timer;window.addEventListener('resize',()=>{clearTimeout(timer);timer=setTimeout(drawChart,90);});
+  render();
+})();
+
+document.addEventListener('DOMContentLoaded',()=>{const note=document.querySelector('.roll-context');if(note)note.append(document.createTextNode(" 60分钟全合约试算-21.6；近月减远月价差+0.350。基差、净基差及IRR未核验。"));});</script></body>
+</html>
