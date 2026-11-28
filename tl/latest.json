@@ -1,27 +1,28 @@
 {
-  "date": "2026-11-26",
-  "daily_score": -25.0764498853,
-  "daily_roll_trial": -13.4902952084,
-  "minute_score": -28.3908073401,
-  "minute_roll_trial": -21.6330374294,
+  "date": "2026-11-27",
+  "daily_score": -25.9533791509,
+  "daily_roll_trial": -14.6036674971,
+  "minute_score": -26.4543804545,
+  "minute_roll_trial": -24.8553161595,
   "missing": [
-    "CTD基差/净基差/IRR"
+    "CTD基差/净基差/IRR",
+    "分钟/日终持仓差异原因待核验：TL2612"
   ],
-  "report_url": "https://www.fixcmulti.top/tl/20261126/",
+  "report_url": "https://www.fixcmulti.top/tl/20261127/",
   "files": {
-    "brief.txt": "c610c0755f84295c80ba2b0440de44fc605c435fb6fa6375fb66d84169394280",
-    "daily-outlook.png": "d8e9292a2b128194b8e86695a7e0cd525ba235ebdc3a6e63d312db67c4425561",
-    "daily-signals.png": "fa4b6f7a58b0fd36c69f4f74a200f4eb64e37d0ebc96c7e8317396c2cc1a4b86",
-    "data-status.txt": "c4cadd0884ab40cbf4047c20507df98479a8b2f0ea39ac6b3187e611aedb6453",
-    "flow-five-days.json": "d4a60b23ac40e73fa048a4fb12cc7d3b0e17697a86e036793a92cbdeb6f0c388",
-    "flow.txt": "4a52eca7e646e1df75f435b8dda9314386d4c470d008ddc955371792009f737e",
-    "index.html": "d0b9caf6ab22d7635e5b70f68b38a89fe92e184c17c0ce6e23c753dca4fc48e7",
-    "intraday.html": "46091c36acd32989d873a91d3931245822e71f94374f8ba497279a5518241277",
-    "overview.png": "208f44bd11b7b1335553406c170654bc8f35c9c5a903198f0a37acb8500a74a9",
-    "panorama.html": "a5a4f64c735b8cf244d522254a4a35bd18c2fd1ca86b04fd1d8201535b346060",
-    "review.html": "bf1e1e0c0d6046cbb2d1bf6df916f0f433947811bd9355e59637f49f5101913d",
-    "review.txt": "422af981cecc55ec1111f169edb86d51e2892a7610594911927afc37642f9c8a",
-    "rollover.txt": "a48d0648362d0f448c016c0ec08bd18824f0c14b6765cae3ca68a0e75d9c070f",
-    "seats.txt": "34c0542ad522fdad9a605bb201ca33843b2e1b7edde90a3e5f1f48a657347710"
+    "brief.txt": "ae74ee2609fe267172d7fd3590c9134f46628ba4c268cdc149763fc76d12ffb6",
+    "daily-outlook.png": "c0756fbccc9a5c11ec9dc9e898282097266e5bf23fbbd775d644126164c24462",
+    "daily-signals.png": "959a72e3e1ade7d981cca8769df4ea899929dcaf2b199736cdffb175f2126517",
+    "data-status.txt": "43d61e953634b69faf10e74d005adcc7c03639b11e8f8161ef2da0d9adad93dd",
+    "flow-five-days.json": "f6c83474b6385ef1fc8e249adeabaa8a488a9787b39550d16389776c0360848c",
+    "flow.txt": "1c70814f15cd9a1b82320e1a9fadc32c515b88f1bfd36cb989b0997013bb6f87",
+    "index.html": "dab60701b18bd8ede82f0ca700a4563d355428f5a9991a0cc342529ba435d7bd",
+    "intraday.html": "5be1369d6711ca0fc29c62191e702d612ec6d1bb171efeb7bcf2f8e8b3fe3512",
+    "overview.png": "2c7dfaae9397563d1a25fa8c160d2546098cf4a12d1c1e64603c034a398d0910",
+    "panorama.html": "aba66c8babb31f5ad42a1a93263c72d64e44857cb216d3ff3ead532c45994cf9",
+    "review.html": "24da445a4d14d08c72bc9dbcd7e3a37f6878b340140243d4cb5807401755281d",
+    "review.txt": "5fa04d2305057b4661b229ea1522e737bddc3f0593c9405145569042d72a047e",
+    "rollover.txt": "aa17aefababb176d27f2c12c89dfd25a70f8244b40b72acce5b6e014961922b6",
+    "seats.txt": "efcf4ed01aceca39d1829527fa352d0090ed11a447d849ebc5a48b88917ca802"
   }
 }
